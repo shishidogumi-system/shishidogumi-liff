@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+
   <title>宍戸組 申請システム</title>
 
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
@@ -11,40 +12,48 @@
     body {
       margin: 0;
       padding: 40px 20px;
-      font-family: -apple-system, BlinkMacSystemFont, "Noto Sans JP",
-                   "Hiragino Kaku Gothic ProN", "Yu Gothic", Arial, sans-serif;
-      text-align: center;
       background: #f5f5f5;
       color: #111;
+      font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Noto Sans JP",
+        "Hiragino Kaku Gothic ProN",
+        "Yu Gothic",
+        Arial,
+        sans-serif;
+      text-align: center;
     }
 
     .box {
-      max-width: 600px;
-      margin: 80px auto;
+      max-width: 680px;
+      margin: 60px auto;
       background: #fff;
       border-radius: 18px;
-      padding: 40px 25px;
+      padding: 35px 25px;
       box-sizing: border-box;
-      box-shadow: 0 4px 18px rgba(0,0,0,.08);
+      box-shadow: 0 4px 18px rgba(0,0,0,0.08);
     }
 
     .title {
       font-size: 32px;
-      font-weight: 700;
-      margin-bottom: 24px;
+      font-weight: 900;
+      margin-bottom: 20px;
     }
 
     .status {
       font-size: 22px;
-      line-height: 1.6;
+      line-height: 1.7;
+      font-weight: 800;
     }
 
     .error {
-      margin-top: 25px;
-      color: #d00;
+      margin-top: 20px;
+      color: #c00;
       white-space: pre-wrap;
       word-break: break-word;
-      font-size: 18px;
+      font-size: 17px;
+      text-align: left;
     }
   </style>
 </head>
@@ -53,62 +62,241 @@
 
   <div class="box">
     <div class="title">宍戸組 申請システム</div>
+
     <div id="status" class="status">
       LINE認証を確認しています…
     </div>
+
     <div id="error" class="error"></div>
   </div>
 
-  <script>
-    const LIFF_ID = '2011785712-iKJrxFMX';
 
+  <script>
+
+    /*
+     * LIFF ID
+     */
+    const LIFF_ID =
+      '2011785712-iKJrxFMX';
+
+
+    /*
+     * 現在のGAS WebアプリURL
+     */
     const GAS_URL =
-      'https://script.google.com/macros/s/AKfycbyIjanUwmqXixwUluYrBgHwFZDR15s3LauimFjcWwkWJAWduEnlfK7SZkuCnrIrpk/exec';
+      'https://script.google.com/macros/s/AKfycbyIjanUwmqXixwUluYrBgHwFZgDR15s3LauimFjcWwkWjAWduEnlfK7SZkuCnrIrpk/exec';
 
 
     function setStatus(text) {
-      document.getElementById('status').textContent = text;
+
+      document.getElementById(
+        'status'
+      ).textContent =
+        text;
+
     }
 
 
     function setError(text) {
-      document.getElementById('error').textContent = text;
+
+      document.getElementById(
+        'error'
+      ).textContent =
+        text;
+
     }
 
 
+    function getAllowedPage(value) {
+
+      const allowed = [
+        'transport',
+        'daily',
+        'report',
+        'expense'
+      ];
+
+      return allowed.includes(value)
+        ? value
+        : null;
+
+    }
+
+
+    /*
+     * LIFFでは ?page=... が liff.state に
+     * 入る場合があるため両方を確認します。
+     */
     function getPage() {
-      const params =
-        new URLSearchParams(window.location.search);
 
-      const page =
-        params.get('page');
+      const searchParams =
+        new URLSearchParams(
+          window.location.search
+        );
 
-      if (
-        page === 'transport' ||
-        page === 'daily' ||
-        page === 'report' ||
-        page === 'expense'
-      ) {
+
+      let page =
+        getAllowedPage(
+          searchParams.get('page')
+        );
+
+
+      if (page) {
         return page;
       }
 
+
+      const state =
+        searchParams.get('liff.state');
+
+
+      if (state) {
+
+        let decoded =
+          state;
+
+
+        for (
+          let i = 0;
+          i < 3;
+          i++
+        ) {
+
+          try {
+
+            const next =
+              decodeURIComponent(
+                decoded
+              );
+
+            if (
+              next === decoded
+            ) {
+              break;
+            }
+
+            decoded =
+              next;
+
+          }
+          catch (error) {
+
+            break;
+
+          }
+
+        }
+
+
+        const match =
+          decoded.match(
+            /(?:[?&]|%3F|%26)page(?:=|%3D)(transport|daily|report|expense)/
+          );
+
+
+        if (match) {
+
+          page =
+            getAllowedPage(
+              match[1]
+            );
+
+          if (page) {
+            return page;
+          }
+
+        }
+
+
+        try {
+
+          const stateUrl =
+            new URL(
+              decoded,
+              window.location.origin
+            );
+
+
+          page =
+            getAllowedPage(
+              stateUrl.searchParams.get(
+                'page'
+              )
+            );
+
+
+          if (page) {
+            return page;
+          }
+
+        }
+        catch (error) {
+
+          // 取得できなければ下へ進みます。
+
+        }
+
+      }
+
+
+      /*
+       * 交通費を既定値にします。
+       */
       return 'transport';
+
     }
 
 
+    /*
+     * LINE → GitHub Pages → GAS
+     *
+     * IDトークンをURLではなくPOST本文で
+     * GASへ渡します（フィールド名は id_token）。
+     */
     async function start() {
 
       try {
 
-        setStatus('LINEを初期化しています…');
+        setStatus(
+          'LINEを初期化しています…'
+        );
+
 
         await liff.init({
+
           liffId: LIFF_ID,
+
           withLoginOnExternalBrowser: true
+
         });
 
 
-        setStatus('LINE認証情報を取得しています…');
+        setStatus(
+          'LINEユーザー情報を取得しています…'
+        );
+
+
+        if (
+          !liff.isInClient() &&
+          !liff.isLoggedIn()
+        ) {
+
+          setStatus(
+            'LINEログインへ移動します…'
+          );
+
+
+          liff.login({
+
+            redirectUri:
+              window.location.href
+
+          });
+
+
+          return;
+
+        }
 
 
         const idToken =
@@ -116,9 +304,11 @@
 
 
         if (!idToken) {
+
           throw new Error(
             'LINE IDトークンを取得できませんでした。'
           );
+
         }
 
 
@@ -126,30 +316,87 @@
           getPage();
 
 
+        setStatus(
+          '申請システムを開いています…'
+        );
+
+
         /*
-         * IDトークンはURLのハッシュ部分に入れます。
-         * ハッシュはサーバーへ送信されません。
+         * フォームPOSTでGASへ移動します。
+         * IDトークンをURLへ載せません。
          */
-        const gasUrl =
-          GAS_URL +
-          '?page=' +
-          encodeURIComponent(page) +
-          '#id_token=' +
-          encodeURIComponent(idToken);
+        const form =
+          document.createElement(
+            'form'
+          );
 
 
-        setStatus('申請システムを開いています…');
+        form.method =
+          'POST';
+
+        form.action =
+          GAS_URL;
+
+        form.style.display =
+          'none';
 
 
-        window.location.replace(gasUrl);
+        const pageInput =
+          document.createElement(
+            'input'
+          );
+
+        pageInput.type =
+          'hidden';
+
+        pageInput.name =
+          'page';
+
+        pageInput.value =
+          page;
+
+
+        const tokenInput =
+          document.createElement(
+            'input'
+          );
+
+        tokenInput.type =
+          'hidden';
+
+        tokenInput.name =
+          'id_token';
+
+        tokenInput.value =
+          idToken;
+
+
+        form.appendChild(
+          pageInput
+        );
+
+        form.appendChild(
+          tokenInput
+        );
+
+
+        document.body.appendChild(
+          form
+        );
+
+
+        form.submit();
 
       }
       catch (error) {
 
-        setStatus('エラーが発生しました。');
+        setStatus(
+          'エラーが発生しました。'
+        );
 
         setError(
-          error && error.message
+          error &&
+          error.message
             ? error.message
             : String(error)
         );
@@ -160,6 +407,7 @@
 
 
     start();
+
   </script>
 
 </body>
