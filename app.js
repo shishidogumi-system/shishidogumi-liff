@@ -153,7 +153,7 @@ async function sendDaily_() {
     showMessage(await callServer('saveDailyPayment', {idToken: idToken, requestId: dailyRequestId, amount: amount, workDates: workDates}));
     clearRequest_('daily');dailyRequestId = null; dailyRequestAmount = null;
     byId('dailyAmount').value = '';
-    dailySelectedDates_.clear();renderDailyDates_();renderDailyAmounts_();
+    dailySelectedDates_.clear();renderDailyDates_();await refreshDailyAmounts_();
   } catch (error) { showError(errorText(error, '日払い申請に失敗しました。')); }
   finally {
     setBusy('daily', 'dailyButton', '申請中…', '日払いを申請する', ['dailyAmount','dailyWorkDate','dailyAddDate'], false);byId('dailySelectedDates').querySelectorAll('button').forEach(b=>b.disabled=false);
