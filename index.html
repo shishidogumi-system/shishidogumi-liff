@@ -1,155 +1,451 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
+
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, viewport-fit=cover">
+
   <title>宍戸組 申請システム</title>
-  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-  <style>
-    body {
-      margin: 0;
-      padding: 40px 20px;
-      background: #f5f5f5;
-      color: #111;
-      font-family: -apple-system, BlinkMacSystemFont, "Noto Sans JP",
-        "Hiragino Kaku Gothic ProN", "Yu Gothic", Arial, sans-serif;
-      text-align: center;
-    }
-    .box {
-      max-width: 680px;
-      margin: 60px auto;
-      background: #fff;
-      border-radius: 18px;
-      padding: 35px 25px;
-      box-sizing: border-box;
-      box-shadow: 0 4px 18px rgba(0,0,0,0.08);
-    }
-    .title {
-      font-size: 32px;
-      font-weight: 900;
-      margin-bottom: 20px;
-    }
-    .status {
-      font-size: 22px;
-      line-height: 1.7;
-      font-weight: 800;
-    }
-    .error {
-      margin-top: 20px;
-      color: #c00;
-      white-space: pre-wrap;
-      word-break: break-word;
-      font-size: 17px;
-      text-align: left;
-    }
-  </style>
+<meta name="referrer" content="no-referrer">
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
+  <!-- LINE認証はGitHubの入口とGAS doPostで完了。GAS内では再初期化しません。 -->
+
+  <link rel="stylesheet" href="./app.css">
+
 </head>
+
+
 <body>
-  <div class="box">
-    <div class="title">宍戸組 申請システム</div>
-    <div id="status" class="status">LINE認証を確認しています…</div>
-    <div id="error" class="error"></div>
+
+<div class="container">
+<p id="startupStatus" class="user-info" role="status">LINE本人認証を確認しています…</p>
+
+
+  <div
+    class="title"
+    id="pageTitle">
   </div>
-  <script>
-    const LIFF_ID = '2011785712-iKJrxFMX';
-    const GAS_URL =
-      'https://script.google.com/macros/s/AKfycbwOWN-SCM1YsM-UgTDYYHQUAag5WZI0J4OMgtQZNnzuVjaafc98ZbEdfa8hIfUMQ3F16A/exec';
 
-    function setStatus(text) {
-      document.getElementById('status').textContent = text;
-    }
 
-    function setError(text) {
-      document.getElementById('error').textContent = text;
-    }
+  <div
+    class="user-info"
+    id="userInfo">
+    LINEユーザー情報を確認しています…
+  </div>
 
-    function getAllowedPage(value) {
-      const allowed = ['transport', 'daily', 'report', 'expense', 'shift'];
-      return allowed.includes(value) ? value : null;
-    }
 
-    function getPage() {
-      const searchParams = new URLSearchParams(window.location.search);
-      let page = getAllowedPage(searchParams.get('page'));
-      if (page) return page;
+  <div
+    class="loading"
+    id="loading">
+    読み込み中…
+  </div>
 
-      const state = searchParams.get('liff.state');
-      if (state) {
-        let decoded = state;
-        for (let i = 0; i < 3; i++) {
-          try {
-            const next = decodeURIComponent(decoded);
-            if (next === decoded) break;
-            decoded = next;
-          } catch (error) {
-            break;
-          }
-        }
-        const match = decoded.match(
-          /(?:[?&]|%3F|%26)page(?:=|%3D)(transport|daily|report|expense|shift)/
-        );
-        if (match) {
-          page = getAllowedPage(match[1]);
-          if (page) return page;
-        }
-        try {
-          const stateUrl = new URL(decoded, window.location.origin);
-          page = getAllowedPage(stateUrl.searchParams.get('page'));
-          if (page) return page;
-        } catch (error) {}
-      }
-      return 'transport';
-    }
 
-    async function start() {
-      try {
-        setStatus('LINEを初期化しています…');
-        await liff.init({
-          liffId: LIFF_ID,
-          withLoginOnExternalBrowser: true
-        });
+  <div class="card">
+    <form id="nameRegistration" class="hidden">
+      <div class="input-area">
+        <label class="label" for="realName">氏名</label>
+        <input type="text" id="realName" name="name" autocomplete="name" maxlength="60"
+          placeholder="例：山田 太郎" required>
+        <div class="note">会社の申請に使用する氏名を入力してください。登録後は、次回から入力不要です。</div>
+      </div>
+      <div class="input-area">
+        <label class="label" for="guardRole">警備員区分</label>
+        <select id="guardRole" required style="width:100%;min-height:105px;font-size:30px;padding:15px;border:4px solid #bdbdbd;border-radius:14px;background:white;">
+          <option value="">選択してください</option>
+          <option value="一般警備員">一般警備員</option>
+          <option value="資格保有警備員">資格保有警備員</option>
+        </select>
+      </div>
+      <button type="submit" class="button" id="registerNameButton">氏名を登録して申請へ進む</button>
+    </form>
 
-        setStatus('LINEユーザー情報を取得しています…');
-        if (!liff.isInClient() && !liff.isLoggedIn()) {
-          setStatus('LINEログインへ移動します…');
-          liff.login({redirectUri: window.location.href});
-          return;
-        }
 
-        const idToken = liff.getIDToken();
-        if (!idToken) {
-          throw new Error('LINE IDトークンを取得できませんでした。');
-        }
+    <nav aria-label="申請メニュー" style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:24px;font-size:20px;">
+      <a target="_top" href="https://liff.line.me/2011785712-iKJrxFMX?page=transport">交通費</a>
+      <a target="_top" href="https://liff.line.me/2011785712-iKJrxFMX?page=daily">日払い</a>
+      <a target="_top" href="https://liff.line.me/2011785712-iKJrxFMX?page=expense">経費</a>
+      <a target="_top" href="https://liff.line.me/2011785712-iKJrxFMX?page=report">日報</a>
+      <a target="_top" href="https://liff.line.me/2011785712-iKJrxFMX?page=shift">シフト申請</a>
+    </nav>
+    <!-- =========================
+         A 交通費
+    ========================= -->
 
-        const page = getPage();
-        setStatus('申請システムを開いています…');
+    <div
+      id="transportForm"
+      class="hidden">
 
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = GAS_URL;
-        form.style.display = 'none';
+      <div class="input-area">
 
-        const pageInput = document.createElement('input');
-        pageInput.type = 'hidden';
-        pageInput.name = 'page';
-        pageInput.value = page;
+        <label
+          class="label"
+          for="transportDate">
 
-        const tokenInput = document.createElement('input');
-        tokenInput.type = 'hidden';
-        tokenInput.name = 'id_token';
-        tokenInput.value = idToken;
+          利用日
 
-        form.appendChild(pageInput);
-        form.appendChild(tokenInput);
-        document.body.appendChild(form);
-        form.submit();
-      } catch (error) {
-        setStatus('エラーが発生しました。');
-        setError(error && error.message ? error.message : String(error));
-      }
-    }
+        </label>
 
-    start();
-  </script>
+        <input
+          type="date"
+          id="transportDate">
+
+      </div>
+
+
+      <div class="input-area">
+
+        <label
+          class="label"
+          for="route">
+
+          利用区間
+
+        </label>
+
+        <input
+          type="text"
+          id="route"
+          placeholder="梅田駅ーあびこ駅"
+          autocomplete="off">
+
+        <div class="note">
+
+          例：梅田駅ーあびこ駅<br>
+          空白・ー・～・~・、・読点・→などに対応
+
+        </div>
+
+
+        <button
+          type="button"
+          class="calculate-button"
+          id="calculateButton"
+          onclick="calculateFare()">
+
+          運賃を計算する
+
+        </button>
+
+      </div>
+
+
+      <div class="input-area">
+        <label class="label" for="transportTripType">往復・片道</label>
+        <select id="transportTripType" onchange="selectTransportTrip()" style="width:100%;min-height:90px;font-size:30px;">
+          <option value="往復">往復</option><option value="片道">片道</option>
+        </select>
+      </div>
+      <div
+        class="result-box"
+        id="resultBox">
+
+        <div class="result-label">
+          交通費申請額
+        </div>
+
+        <div
+          class="result-route"
+          id="resultRoute">
+        </div>
+
+        <div
+          class="result-amount"
+          id="resultAmount">
+        </div>
+
+      </div>
+
+
+      <button
+        type="button"
+        class="button"
+        id="transportButton"
+        onclick="submitTransport()"
+        disabled>
+
+        交通費を申請する
+
+      </button>
+
+    </div>
+
+
+    <!-- =========================
+         B 日払い
+    ========================= -->
+
+    <div
+      id="dailyForm"
+      class="hidden">
+      <div class="input-area"><label class="label" for="dailyWorkDate">対象勤務日</label><input type="date" id="dailyWorkDate" required><div class="note">前日など、実際に勤務した日を選択してください。受付日時は別に保存します。</div></div>
+
+      <div class="input-area">
+
+        <label class="label">
+          申請日
+        </label>
+
+        <div
+          class="fixed-date"
+          id="dailyDate">
+        </div>
+
+        <div class="note">
+          申請日は自動で今日の日付になります
+        </div>
+
+      </div>
+
+
+      <div class="input-area">
+
+        <label
+          class="label"
+          for="dailyAmount">
+
+          申請金額
+
+        </label>
+
+        <input
+          type="number"
+          id="dailyAmount"
+          placeholder="金額"
+          inputmode="numeric"
+          min="1"
+          step="1">
+
+      </div>
+
+
+      <div class="note">交通費・経費を含めた希望額を入力してください。支払額は未払いの残額を上限に計算します。</div>
+      <button
+        type="button"
+        class="button"
+        id="dailyButton"
+        onclick="submitDaily()"
+        disabled>
+
+        日払いを申請する
+
+      </button>
+
+    </div>
+
+
+    <!-- =========================
+         C 日報
+    ========================= -->
+
+    <div
+      id="reportForm"
+      class="hidden">
+
+      <div class="input-area">
+
+        <label class="label">
+          報告日
+        </label>
+
+        <div
+          class="fixed-date"
+          id="reportDate">
+        </div>
+
+        <div class="note">
+          送信日は日本時間の今日の日付です。日報の日付は写真から読み取ります。
+        </div>
+
+      </div>
+
+
+      <div class="input-area">
+
+        <label
+          class="label"
+          for="reportPhotos">
+
+          日報写真
+
+        </label>
+
+        <input
+          type="file"
+          id="reportPhotos"
+          accept="image/*"
+          capture="environment"
+          multiple
+          onchange="previewReportPhotos()">
+
+        <div
+          class="preview-list"
+          id="reportPreview">
+        </div>
+
+        <div class="note">
+          日報写真は5枚まで添付できます（1枚10MB、合計20MBまで）
+        </div>
+
+      </div>
+
+
+      <div class="input-area">
+
+        <label
+          class="label"
+          for="reportNote">
+
+          備考
+
+        </label>
+
+        <textarea
+          id="reportNote"
+          maxlength="4000"
+          placeholder="報告事項があれば入力してください"></textarea>
+
+      </div>
+
+
+      <button
+        type="button"
+        class="button"
+        id="reportButton"
+        onclick="submitReport()"
+        disabled>
+
+        日報を報告する
+
+      </button>
+
+    </div>
+
+
+    <!-- =========================
+         D 経費
+    ========================= -->
+
+    <div
+      id="expenseForm"
+      class="hidden">
+      <div class="input-area"><label class="label" for="expenseWorkDate">対象勤務日</label><input type="date" id="expenseWorkDate" required><div class="note">前日など、実際に勤務した日を選択してください。受付日時は別に保存します。</div></div>
+
+      <div class="input-area">
+
+        <label class="label">
+          申請日
+        </label>
+
+        <div
+          class="fixed-date"
+          id="expenseDate">
+        </div>
+
+        <div class="note">
+          申請日は自動で今日の日付になります
+        </div>
+
+      </div>
+
+
+      <div class="input-area">
+
+        <label
+          class="label"
+          for="receipt">
+
+          レシート・領収書
+
+        </label>
+
+        <input
+          type="file"
+          id="receipt"
+          accept="image/*"
+          capture="environment"
+          onchange="previewReceipt()">
+
+        <img
+          id="receiptPreview"
+          class="preview"
+          alt="レシートプレビュー">
+
+        <div class="note">
+          レシート・領収書の写真を添付してください
+        </div>
+
+      </div>
+
+
+      <div class="input-area">
+
+        <label
+          class="label"
+          for="expenseAmount">
+
+          経費申請額
+
+        </label>
+
+        <input
+          type="number"
+          id="expenseAmount"
+          placeholder="金額"
+          inputmode="numeric"
+          min="1"
+          step="1">
+
+      </div>
+
+
+      <button
+        type="button"
+        class="button"
+        id="expenseButton"
+        onclick="submitExpense()"
+        disabled>
+
+        経費を申請する
+
+      </button>
+
+    </div>
+
+
+    <div id="shiftForm" class="hidden">
+ <div class="input-area"><h2 class="label">希望日を選択（1〜15日）</h2><p class="note">未来の日や、離れた日も選べます。選択中の日をもう一度押すと解除します。</p>
+ <div class="calendar-toolbar"><button type="button" class="calendar-nav" aria-label="前の月" onclick="moveShiftMonth_(-1)">前月</button><h2 id="shiftMonthTitle"></h2><button type="button" class="calendar-nav" aria-label="次の月" onclick="moveShiftMonth_(1)">次月</button></div>
+ <div class="calendar-weekdays" aria-hidden="true"><span>日</span><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span>土</span></div><div id="shiftCalendar" class="calendar-grid" aria-label="希望日のカレンダー"></div><p id="shiftCount" class="selection-count" aria-live="polite">選択中：0／15日</p></div>
+ <div class="input-area"><h2 class="label">全選択日にまとめて設定</h2><div class="choice-buttons"><button type="button" class="choice-button" onclick="setAllShiftChoices_('日勤')">日勤</button><button type="button" class="choice-button" onclick="setAllShiftChoices_('夜勤')">夜勤</button><button type="button" class="choice-button" onclick="setAllShiftChoices_('どちらでも')">どちらでも</button></div><p id="shiftBulkStatus" class="note" aria-live="polite">その後、日ごとの変更もできます。</p></div>
+ <div id="shiftSelected" aria-label="選択日と希望勤務の一覧"></div>
+ <div class="input-area"><label class="label" for="shiftNote">希望内容（100文字まで・全日に共通）</label><textarea id="shiftNote" maxlength="100" placeholder="希望があれば入力してください"></textarea><p class="note">給与や実際の勤務実績は、この申請から作りません。</p></div>
+ <button type="button" class="button" id="shiftButton" onclick="submitShift()" disabled>内容を確認して提出</button>
+ </div>
+    <div
+      class="message"
+      id="message">
+    </div>
+
+
+    <div
+      class="error"
+      id="error">
+    </div>
+
+  </div>
+
+</div>
+
+
+<dialog id="reviewDialog" aria-labelledby="reviewTitle"><h2 id="reviewTitle">申請内容の確認</h2><ul id="reviewList" class="review-list"></ul><div class="review-actions"><button type="button" class="button" id="reviewConfirm">この内容で提出する</button><button type="button" id="reviewCancel">戻って修正する</button></div></dialog>
+<script src="./entry.js" defer></script>
+
 </body>
+
 </html>
