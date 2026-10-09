@@ -185,15 +185,6 @@
       class="hidden">
       <div class="input-area"><label class="label" for="dailyWorkDate">対象勤務日</label><input type="date" id="dailyWorkDate"><button type="button" class="button secondary" id="dailyAddDate">この日を追加</button><div id="dailySelectedDates" class="daily-selected-list" aria-live="polite"></div><div class="note">過去日や連続していない日も追加できます。選択した日を個別に解除できます。シフト申請の日数上限は適用しません。</div></div>
 
-      <section class="daily-owned-summary" aria-live="polite" aria-label="選択日の本人申請額">
-        <h2>選択日の本人申請額</h2>
-        <p>交通費：<strong id="dailyTransportTotal">0円</strong></p>
-        <p class="daily-subtotal">申請合計 <span id="dailyTransportUnpaid">未精算残額 0円</span></p>
-        <p>経費立替：<strong id="dailyExpenseTotal">0円</strong></p>
-        <p class="daily-subtotal">申請合計 <span id="dailyExpenseUnpaid">未精算残額 0円</span></p>
-        <div id="dailySummaryStatus" class="note">対象日を追加すると、登録済みの本人申請だけを表示します。</div>
-      </section>
-
       <div class="input-area">
 
         <label class="label">
@@ -211,6 +202,14 @@
 
       </div>
 
+      <section class="daily-owned-summary" aria-live="polite" aria-label="選択日の本人申請額">
+        <h2>選択日の本人申請額</h2>
+        <p>交通費：<strong id="dailyTransportTotal">0円</strong></p>
+        <p class="daily-subtotal">申請合計 <span id="dailyTransportUnpaid">未精算残額 0円</span></p>
+        <p>経費立替：<strong id="dailyExpenseTotal">0円</strong></p>
+        <p class="daily-subtotal">申請合計 <span id="dailyExpenseUnpaid">未精算残額 0円</span></p>
+        <div id="dailySummaryStatus" class="note">対象日を追加すると、登録済みの本人申請だけを表示します。</div>
+      </section>
 
       <div class="input-area">
 
