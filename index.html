@@ -64,7 +64,7 @@
     }
 
     function getAllowedPage(value) {
-      const allowed = ['transport', 'daily', 'report', 'expense'];
+      const allowed = ['transport', 'daily', 'report', 'expense', 'shift'];
       return allowed.includes(value) ? value : null;
     }
 
@@ -86,7 +86,7 @@
           }
         }
         const match = decoded.match(
-          /(?:[?&]|%3F|%26)page(?:=|%3D)(transport|daily|report|expense)/
+          /(?:[?&]|%3F|%26)page(?:=|%3D)(transport|daily|report|expense|shift)/
         );
         if (match) {
           page = getAllowedPage(match[1]);
