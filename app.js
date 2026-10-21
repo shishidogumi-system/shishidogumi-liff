@@ -197,6 +197,7 @@ function previewReportPhotos() {
       const img = document.createElement('img');
       img.src = url; img.alt = '日報写真';
       byId('reportPreview').appendChild(img);
+      prepareReportPhoto_(file).catch(function(){/* 送信時に再試行してエラー表示 */});
     });
   } catch (error) { showError(error.message); }
 }
@@ -232,6 +233,10 @@ function newRequestId() {
     ? window.crypto.randomUUID() : Date.now().toString(36) + '_' + Math.random().toString(36).slice(2);
 }
 
+// 写真の選択時に準備し、再送時は同じデータを使用する。
+const preparedReportPhotos_=new WeakMap();
+function prepareReportPhoto_(file){if(preparedReportPhotos_.has(file))return preparedReportPhotos_.get(file);const task=(async function(){const original=await readFileAsDataURL(file);if(!/^image\/(jpeg|png|webp)$/i.test(file.type)||file.size<500000)return original;try{const image=await new Promise(function(resolve,reject){const img=new Image();img.onload=()=>resolve(img);img.onerror=reject;img.src=original;});const max=2560,scale=Math.min(1,max/Math.max(image.naturalWidth,image.naturalHeight));if(!image.naturalWidth||!image.naturalHeight)return original;const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(image.naturalWidth*scale));canvas.height=Math.max(1,Math.round(image.naturalHeight*scale));const ctx=canvas.getContext('2d');if(!ctx)return original;ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(image,0,0,canvas.width,canvas.height);const result=canvas.toDataURL('image/jpeg',0.9);return result.length<original.length?result:original;}catch(error){return original;}})();preparedReportPhotos_.set(file,task);task.catch(()=>preparedReportPhotos_.delete(file));return task;}
+
 async function sendReport_() {
   if (pending.report) return;
   clearError(); clearMessage();
@@ -243,11 +248,14 @@ async function sendReport_() {
     if (note.length > 4000) throw new Error('備考は4000文字以内で入力してください。');
     setBusy('report', 'reportButton', '日報を送信中…', '日報を報告する', ['reportPhotos', 'reportNote'], true);
     if (!reportRequestId) reportRequestId = newRequestId();
-    const fileData = await Promise.all(files.map(readFileAsDataURL));
+    const started=performance.now();
+    const fileData = await Promise.all(files.map(prepareReportPhoto_));
+    byId('reportButton').textContent='写真を保存しています…';
     const result = await callServer('saveDailyReport', {
       idToken: idToken, requestId: reportRequestId, fileData: fileData,
       fileNames: files.map(function(file) { return file.name; }), note: note
     });
+    console.info('daily-report-submit',{durationMs:Math.round(performance.now()-started),photos:files.length});
     showMessage(result);
     byId('reportPhotos').value = '';
     byId('reportNote').value = '';
