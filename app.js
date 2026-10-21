@@ -5,8 +5,8 @@ const BOOTSTRAP = window.SHISHIDOGUMI_BOOTSTRAP;
 const PAGE = BOOTSTRAP.page;
 const idToken = BOOTSTRAP.idToken;
 let currentUser = BOOTSTRAP.currentUser;
-const titles = {transport: '交通費申請', daily: '日払い申請', report: '日報報告', expense: '経費申請', shift: 'シフト申請'};
-const forms = {transport: 'transportForm', daily: 'dailyForm', report: 'reportForm', expense: 'expenseForm', shift: 'shiftForm'};
+const titles = {work:'勤務報告',transport: '交通費申請', daily: '日払い申請', report: '日報報告', expense: '経費申請', shift: 'シフト申請'};
+const forms = {work:'workForm',transport: 'transportForm', daily: 'dailyForm', report: 'reportForm', expense: 'expenseForm', shift: 'shiftForm'};
 const pending = {transport: false, calculate: false, daily: false, report: false, expense: false, shift: false};
 let transportResult = null;
 let transportRequestId = null;
@@ -289,7 +289,7 @@ let registeringName = false;
 function showRegisteredApplication() {
   requireAuthentication();
   byId('nameRegistration').classList.add('hidden');
-  Object.keys(forms).forEach(function(key) { byId(forms[key]).classList.toggle('hidden', key !== PAGE); });
+  Object.keys(forms).forEach(function(key) { if(!byId(forms[key]))return;byId(forms[key]).classList.toggle('hidden', key !== PAGE); });
   byId('pageTitle').textContent = titles[PAGE] || '申請';
   byId('userInfo').textContent = '利用者：' + currentUser.name;
   ['dailyButton', 'reportButton', 'expenseButton', 'calculateButton','shiftButton'].forEach(function(id) { byId(id).disabled = false; });
@@ -316,6 +316,7 @@ async function sendStaffName_() {
     currentUser = user;
     byId('realName').value = '';
     showRegisteredApplication();
+    if(PAGE==='work')refreshWorkReport_();
   } catch (error) { showError(errorText(error, '氏名の登録に失敗しました。もう一度登録してください。')); }
   finally {
     registeringName = false;
@@ -349,7 +350,7 @@ function initializeApplication() {
   installFileInput_('reportPhotos','日報写真を選ぶ');installFileInput_('receipt','領収書の写真を選ぶ');
   installChoiceInput_('transportTripType',['往復','片道']);installChoiceInput_('guardRole',['一般警備員','資格保有警備員']);renderShiftCalendar_();renderShiftSelection_();
   byId('pageTitle').textContent = titles[PAGE] || '申請';
-  Object.keys(forms).forEach(function(key) { byId(forms[key]).classList.toggle('hidden', key !== PAGE); });
+  Object.keys(forms).forEach(function(key) { if(!byId(forms[key]))return;byId(forms[key]).classList.toggle('hidden', key !== PAGE); });
   byId('transportDate').value = BOOTSTRAP.today;
   ['dailyWorkDate','expenseWorkDate'].forEach(function(id){byId(id).value=BOOTSTRAP.today;});
   byId('dailyAddDate').addEventListener('click',addDailyDate_);byId('dailyWorkDate').addEventListener('change',function(){if(dailySelectedDates_.has(byId('dailyWorkDate').value))return;});renderDailyDates_();renderDailyAmounts_();
@@ -366,7 +367,7 @@ function initializeApplication() {
   byId('nameRegistration').addEventListener('submit', function(event) { event.preventDefault(); submitStaffName(); });
   try {
     if (idToken && needsStaffRegistration()) {
-      Object.keys(forms).forEach(function(key) { byId(forms[key]).classList.add('hidden'); });
+      Object.keys(forms).forEach(function(key) { if(!byId(forms[key]))return;byId(forms[key]).classList.add('hidden'); });
       byId('nameRegistration').classList.remove('hidden');
       if (currentUser.registered) byId('realName').value = currentUser.name;
       byId('pageTitle').textContent = '初回氏名登録';
@@ -375,7 +376,7 @@ function initializeApplication() {
       showRegisteredApplication();
     }
   } catch (error) {
-    Object.keys(forms).forEach(function(key) { byId(forms[key]).classList.add('hidden'); });
+    Object.keys(forms).forEach(function(key) { if(!byId(forms[key]))return;byId(forms[key]).classList.add('hidden'); });
     byId('userInfo').textContent = 'LINEユーザー情報を確認できませんでした。';
     showError(error.message);
   }
@@ -383,3 +384,11 @@ function initializeApplication() {
 initializeApplication();
 
 
+
+
+let workReportState_={active:null,history:[]},workReportBusy_=false;
+function renderWorkReport_(){const active=workReportState_.active;byId('workClockInPanel').hidden=!!active;byId('workClockOutPanel').hidden=!active;if(active)byId('workActiveInfo').textContent=active.date+' '+active.shift+'\n'+(active.site?active.site+'\n':'')+'上番 '+active.clockIn;byId('workReportHistory').replaceChildren();workReportState_.history.forEach(function(w){const card=document.createElement('p');card.textContent=w.date+' '+w.shift+'　'+w.status+'\n上番 '+w.clockIn+(w.clockOut?'\n下番 '+w.clockOut+'　残業'+w.minutes+'分':'')+(w.reflected?'\n給与 '+w.reflected:'');byId('workReportHistory').appendChild(card);});byId('workClockInButton').disabled=workReportBusy_||!!active;byId('workClockOutButton').disabled=workReportBusy_||!active;byId('workRefreshButton').disabled=workReportBusy_;}
+async function refreshWorkReport_(){if(workReportBusy_)return;workReportBusy_=true;renderWorkReport_();try{workReportState_=await callServer('workReportState',{idToken:idToken});byId('workReportStatus').textContent=workReportState_.active?'上番中です。勤務終了後に下番を報告してください。':'日勤・夜勤を選び、上番を報告してください。';}catch(error){showError(errorText(error,'勤務情報を確認できませんでした。'));}finally{workReportBusy_=false;renderWorkReport_();}}
+async function submitWorkReport_(out){if(workReportBusy_)return;clearError();clearMessage();try{requireAuthentication();const active=workReportState_.active,shift=byId('workShift').value,site=byId('workSite').value.trim(),minutes=byId('workOvertime').value,note=byId('workNote').value.trim();if(out&&!active)throw new Error('先に勤務情報を更新してください。');if(!out&&['日勤','夜勤'].indexOf(shift)<0)throw new Error('日勤または夜勤を選択してください。');if(out&&minutes==='')throw new Error('残業時間を選択してください。');const rows=out?[['勤務日',active.date],['勤務区分',active.shift],['残業時間',minutes+'分'],['備考',note||'なし']]:[['勤務日',BOOTSTRAP.today],['勤務区分',shift],['現場名',site||'未入力']];if(!await reviewSubmission_(out?'下番報告の確認':'上番報告の確認',rows))return;workReportBusy_=true;renderWorkReport_();byId('workReportStatus').textContent=out?'下番を保存しています…':'上番を保存しています…';const result=await callServer(out?'workClockOut':'workClockIn',out?{idToken:idToken,workId:active.id,minutes:Number(minutes),note:note}:{idToken:idToken,shift:shift,site:site});showMessage(result.message);workReportState_.history=workReportState_.history.filter(w=>w.id!==result.work.id);workReportState_.history.unshift(result.work);workReportState_.active=result.work.status==='上番中'?result.work:null;byId('workReportStatus').textContent=out?'下番を受け付けました。会社承認待ちです。':'上番を受け付けました。';if(out){byId('workOvertime').value='';byId('workNote').value='';}}catch(error){showError(errorText(error,'勤務報告を保存できませんでした。'));}finally{workReportBusy_=false;renderWorkReport_();}}
+function initializeWorkReport_(){if(!byId('workForm'))return;for(let n=30;n<=720;n+=30){const option=document.createElement('option');option.value=String(n);option.textContent=Math.floor(n/60)+'時間'+(n%60? '30分':'');byId('workOvertime').appendChild(option);}byId('workClockInButton').addEventListener('click',()=>submitWorkReport_(false));byId('workClockOutButton').addEventListener('click',()=>submitWorkReport_(true));byId('workRefreshButton').addEventListener('click',refreshWorkReport_);if(PAGE==='work'&&currentUser&&currentUser.registered&&!needsStaffRegistration())refreshWorkReport_();}
+initializeWorkReport_();
