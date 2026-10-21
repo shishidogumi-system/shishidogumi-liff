@@ -75,7 +75,7 @@ function selectTransportTrip() {
   if(!transportResult)return;
   transportResult.tripType=byId('transportTripType').value;
   transportResult.actual=transportResult.tripType==='片道'?transportResult.oneWay:transportResult.roundTrip;transportResult.amount=Math.max(0,transportResult.actual-500);
-  byId('resultAmount').textContent=Number(transportResult.amount).toLocaleString('ja-JP')+'円';byId('resultAmount').style.color=transportResult.amount===0?'#c00000':'';byId('resultRoute').textContent=transportResult.route+'\n'+transportResult.tripType+'運賃'+transportResult.actual.toLocaleString('ja-JP')+'円';byId('resultRoute').style.whiteSpace='pre-line';
+  byId('resultAmount').textContent='会社支給額'+Number(transportResult.amount).toLocaleString('ja-JP')+'円';byId('resultAmount').style.color=transportResult.amount===0?'#c00000':'';byId('resultRoute').textContent=transportResult.route+'\n'+transportResult.tripType+'運賃'+transportResult.actual.toLocaleString('ja-JP')+'円';byId('resultRoute').style.whiteSpace='pre-line';
   transportRequestId=null;
 }
 function invalidateTransport() {
