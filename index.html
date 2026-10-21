@@ -72,6 +72,7 @@
       <a target="_top" href="https://liff.line.me/2011785712-iKJrxFMX?page=expense">経費</a>
       <a target="_top" href="https://liff.line.me/2011785712-iKJrxFMX?page=report">日報</a>
       <a target="_top" href="https://liff.line.me/2011785712-iKJrxFMX?page=shift">シフト申請</a>
+      <a target="_top" href="https://liff.line.me/2011785712-iKJrxFMX?page=work&amp;v=unified-work-20261021-v2">勤務報告</a>
     </nav>
     <!-- =========================
          A 交通費
@@ -435,22 +436,7 @@
  <div class="input-area"><label class="label" for="shiftNote">希望内容（100文字まで・全日に共通）</label><textarea id="shiftNote" maxlength="100" placeholder="希望があれば入力してください"></textarea><p class="note">給与や実際の勤務実績は、この申請から作りません。</p></div>
  <button type="button" class="button" id="shiftButton" onclick="submitShift()" disabled>内容を確認して提出</button>
  </div>
-    <div
-      class="message"
-      id="message">
-    </div>
-
-
-    <div
-      class="error"
-      id="error">
-    </div>
-
-  </div>
-
-</div>
-
-
+<style>#workForm{font-size:20px;line-height:1.6}#workForm label{display:block;font-weight:bold;margin:16px 0 8px}#workForm .button{margin:12px 0}#workForm h2{font-size:24px}#workForm h3{font-size:21px}#workReportHistory p{border-top:1px solid #ddd;padding:12px 0;white-space:pre-line}</style>
 <section id="workForm" class="hidden">
   <h2>勤務報告</h2>
   <p id="workReportStatus" role="status" aria-live="polite">勤務情報を確認しています…</p>
@@ -471,9 +457,24 @@
   <h3>最近の勤務報告</h3><div id="workReportHistory" style="white-space:pre-line"></div>
 </section>
 
+    <div
+      class="message"
+      id="message">
+    </div>
+
+
+    <div
+      class="error"
+      id="error">
+    </div>
+
+  </div>
+
+</div>
+
+
 <dialog id="reviewDialog" aria-labelledby="reviewTitle"><h2 id="reviewTitle">申請内容の確認</h2><ul id="reviewList" class="review-list"></ul><div class="review-actions"><button type="button" class="button" id="reviewConfirm">この内容で提出する</button><button type="button" id="reviewCancel">戻って修正する</button></div></dialog>
-<a href="https://liff.line.me/2011785712-iKJrxFMX?page=work&amp;v=unified-work-20261021-v1">勤務報告</a>
-<script src="./entry.js?v=unified-work-20261021-v1" defer></script>
+<script src="./entry.js?v=unified-work-20261021-v2" defer></script>
 
 </body>
 
