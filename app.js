@@ -438,3 +438,5 @@ function updateProvisionalAvailability_(){
  const work=PAGE==='daily'?dailySummary_&&dailySummary_.provisionalWork:workReportState_.active,info=work&&work.provisional,now=Date.now()+workClockOffset_;
  if(info&&info.target&&!info.complete&&!info.eligible&&!work.clockOut&&Number.isFinite(info.availableAt)&&now>=info.availableAt&&Date.now()-provisionalRefreshAt_>30000){provisionalRefreshAt_=Date.now();if(PAGE==='daily')refreshDailyAmounts_();else refreshWorkReport_();}
 }
+
+if(BOOTSTRAP.directStartupTiming)Promise.resolve().then(function(){const t=BOOTSTRAP.directStartupTiming,p=document.createElement('p');p.id='startupTiming';p.style.cssText='white-space:pre-wrap;font-size:14px;padding:10px;background:#eef6ff';p.textContent='直接表示の起動計測\n'+JSON.stringify({navigationToReadyMs:Date.now()-t.clientStartedAt,lineMs:t.lineMs,serverMs:t.serverMs},null,2);document.body.prepend(p);});
