@@ -15,7 +15,7 @@
 
   <!-- LINE認証はGitHubの入口とGAS doPostで完了。GAS内では再初期化しません。 -->
 
-  <link rel="stylesheet" href="./app.css">
+  <link rel="stylesheet" href="./app.css?v=daily-balance-20261023-v1">
 
 </head>
 
@@ -181,70 +181,38 @@
          B 日払い
     ========================= -->
 
-    <div
-      id="dailyForm"
-      class="hidden">
-      <div class="input-area"><label class="label" for="dailyWorkDate">対象勤務日</label><input type="date" id="dailyWorkDate"><button type="button" class="button secondary" id="dailyAddDate">この日を追加</button><div id="dailySelectedDates" class="daily-selected-list" aria-live="polite"></div><div class="note">過去日や連続していない日も追加できます。選択した日を個別に解除できます。シフト申請の日数上限は適用しません。</div></div>
-
-      <div class="input-area">
-
-        <label class="label">
-          申請日
-        </label>
-
-        <div
-          class="fixed-date"
-          id="dailyDate">
-        </div>
-
-        <div class="note">
-          申請日は自動で今日の日付になります
-        </div>
-
-      </div>
-
-      <section class="daily-owned-summary" aria-live="polite" aria-label="選択日の本人申請額">
-        <h2>選択日の本人申請額</h2>
-        <p>交通費（会社支給額）：<strong id="dailyTransportTotal">0円</strong></p>
-        <p class="daily-subtotal">申請合計 <span id="dailyTransportUnpaid">未精算残額 0円</span></p>
-        <p>経費立替：<strong id="dailyExpenseTotal">0円</strong></p>
-        <p class="daily-subtotal">申請合計 <span id="dailyExpenseUnpaid">未精算残額 0円</span></p>
-        <div id="dailySummaryStatus" class="note">対象日を追加すると、登録済みの本人申請だけを表示します。</div>
+    <div id="dailyForm" class="hidden">
+      <p class="daily-date-line">申請日 <span id="dailyDate"></span></p>
+      <section class="daily-balance-card" aria-label="現在の日払い申請可能残高" aria-live="polite">
+        <h2>現在の残高</h2>
+        <dl class="daily-balance-list">
+          <div><dt>日給の残高</dt><dd id="dailyWageRemaining">—</dd></div>
+          <div><dt>経費・立替金の残高</dt><dd id="dailyExpenseRemaining">—</dd></div>
+          <div><dt>交通費の残高</dt><dd id="dailyTransportRemaining">—</dd></div>
+          <div class="daily-balance-total"><dt>残高合計</dt><dd id="dailyAvailable">—</dd></div>
+        </dl>
+        <p id="dailySummaryStatus" class="note" role="status">残高を確認しています…</p>
+        <button type="button" id="dailyRefresh" class="daily-refresh" onclick="refreshDailyAmounts_()" disabled>残高を更新</button>
       </section>
-
+      <section id="dailyProvisionalPanel" hidden class="daily-balance-card">
+        <p id="dailyProvisionalInfo" style="white-space:pre-line"></p>
+        <button type="button" class="button secondary" id="dailyProvisionalButton" onclick="submitProvisionalOut_('daily')" disabled>仮下番を報告する</button>
+        <p class="note">仮下番で日給を日払い可能額へ反映します。勤務終了後には正式な下番報告が必要です。</p>
+      </section>
+      <button type="button" class="button daily-full-button" id="dailyFullButton" onclick="submitDailyFull()" disabled>全額で申請</button>
+      <p class="note daily-choice-note">一部だけ申請する場合は、希望する金額を入力してください。</p>
       <div class="input-area">
-
-        <label
-          class="label"
-          for="dailyAmount">
-
-          申請金額
-
-        </label>
-
-        <input
-          type="number"
-          id="dailyAmount"
-          placeholder="金額"
-          inputmode="numeric"
-          min="1"
-          step="1">
-
+        <label class="label" for="dailyAmount">希望する日払い額</label>
+        <input type="number" id="dailyAmount" placeholder="例：5000" inputmode="numeric" min="1" step="1" aria-describedby="dailyAmountHint" disabled>
+        <p id="dailyAmountHint" class="note">残高合計の範囲内で申請できます。</p>
       </div>
-
-
-      <div class="note">上の交通費・経費は確認表示です。日払い申請金額や給与へは加算しません。申請額はご自身が希望する金額を入力してください。精算は申請額と未精算残額の範囲内で処理されます。</div>
-      <button
-        type="button"
-        class="button"
-        id="dailyButton"
-        onclick="submitDaily()"
-        disabled>
-
-        日払いを申請する
-
-      </button>
-
+      <button type="button" class="button secondary" id="dailyButton" onclick="submitDaily()" disabled>入力した金額で申請</button>
+      <p class="note">申請した時点では残高・受取済額は変わりません。会社が支払を記録すると反映されます。</p>
+      <section class="daily-lifetime" aria-label="これまでの支給・受取累計">
+        <p>これまでの総支給額 <strong id="dailyLifetimeTotal">—</strong></p>
+        <p>日払い受取済額 <strong id="dailyReceivedTotal">—</strong></p>
+        <p class="daily-lifetime-note">総支給額は支払済み・未払いを含む、日給・交通費・経費の累計です。</p>
+      </section>
     </div>
 
 
@@ -451,6 +419,11 @@
   </div>
   <div id="workClockOutPanel" hidden>
     <p id="workActiveInfo" style="white-space:pre-line"></p>
+    <section id="workProvisionalPanel" hidden>
+      <p id="workProvisionalInfo" style="white-space:pre-line"></p>
+      <button type="button" class="button secondary" id="workProvisionalButton" onclick="submitProvisionalOut_('work')" disabled>仮下番を報告する</button>
+      <p>仮下番後も、勤務終了時に正式な下番を報告してください。</p>
+    </section>
     <label for="workHasOvertime"><input type="checkbox" id="workHasOvertime" style="width:auto;margin-right:10px">残業がありました</label>
     <p>残業がない場合は、そのまま下番を報告できます。</p>
     <div id="workOvertimeFields" hidden><label for="workOvertime">残業時間</label><select id="workOvertime"><option value="">選択してください</option></select></div>
@@ -479,10 +452,11 @@
 
 
 <dialog id="reviewDialog" aria-labelledby="reviewTitle"><h2 id="reviewTitle">申請内容の確認</h2><ul id="reviewList" class="review-list"></ul><div class="review-actions"><button type="button" class="button" id="reviewConfirm">この内容で提出する</button><button type="button" id="reviewCancel">戻って修正する</button></div></dialog>
-<script src="./entry.js?v=auto-base-20261022-v1" defer></script>
+<script src="./entry.js?v=daily-balance-20261023-v1" defer></script>
 
 </body>
 
 </html>
+
 
 

@@ -613,3 +613,22 @@ dialog{width:calc(100% - 16px);max-width:700px;max-height:90dvh;margin:auto;padd
 @media(max-width:350px){.card{padding:16px 6px}.container{padding:10px 4px}.choice-buttons{gap:4px}.choice-button{padding:8px 2px}.calendar-grid{gap:4px}}
 .daily-selected-list{display:grid;gap:10px;margin-top:12px}.daily-date-chip{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;background:#eef6ff;border:2px solid #5b9bd5;border-radius:12px;font-size:20px;font-weight:700}.daily-date-chip button{min-height:48px;padding:8px 14px;font-size:18px}.daily-owned-summary{margin:18px 0;padding:18px;background:#fff;border:2px solid #1675b9;border-radius:16px}.daily-owned-summary h2{margin:0 0 12px;font-size:24px}.daily-owned-summary p{margin:8px 0;font-size:22px}.daily-owned-summary strong{font-size:28px}.daily-subtotal{font-size:17px!important;color:#444}.daily-subtotal span{display:block;font-weight:700;font-size:18px}
 
+
+
+#dailyForm .daily-date-line{margin:0 0 14px;color:#555;font-size:17px}
+#dailyForm .daily-balance-card{padding:18px 14px;margin-bottom:20px;background:#f4f8fc;border:1px solid #b8cde0;border-radius:14px}
+#dailyForm h2{font-size:23px;margin:0 0 14px}
+#dailyForm .daily-balance-list{margin:0}
+#dailyForm .daily-balance-list>div{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:12px 0;border-bottom:1px solid #d9e3ed}
+#dailyForm dt{font-size:18px}#dailyForm dd{margin:0;font-size:24px;font-weight:700;white-space:nowrap}
+#dailyForm .daily-balance-total{border-bottom:0!important;padding-top:18px!important}#dailyForm .daily-balance-total dt{font-weight:700;font-size:20px}#dailyForm .daily-balance-total dd{font-size:29px;color:#143f69}
+#dailyForm .daily-full-button{background:#175382;margin-bottom:8px}#dailyForm .daily-choice-note{margin:18px 0}
+#dailyForm .daily-refresh{min-height:44px;padding:8px 12px;border:1px solid #42698b;border-radius:8px;background:white;color:#234966;font-size:17px}
+#dailyForm button:disabled{opacity:.5;cursor:default}
+#dailyForm .daily-lifetime{margin-top:30px;border-top:1px solid #ddd;padding-top:16px;color:#6b7280}
+#dailyForm .daily-lifetime p{margin:8px 0;font-size:17px}#dailyForm .daily-lifetime strong{font-weight:600;white-space:nowrap}
+#dailyForm .daily-lifetime-note{font-size:15px!important}
+@media(max-width:360px){#dailyForm .daily-balance-card{padding:16px 10px}#dailyForm dt{font-size:16px}#dailyForm dd{font-size:22px}#dailyForm .daily-balance-total dd{font-size:26px}}
+
+/* hidden属性をボタンのdisplay指定より優先する。 */
+[hidden]{display:none!important}
