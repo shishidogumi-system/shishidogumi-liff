@@ -13,12 +13,12 @@
 <meta name="referrer" content="no-referrer">
 <link rel="preconnect" href="https://script.google.com">
 <link rel="preconnect" href="https://script.googleusercontent.com">
-<link rel="preload" href="./app.js?v=free-startup-20261026-v1" as="script">
+<link rel="preload" href="./app.js?v=payroll-reserve-20261026-v1" as="script">
 <script defer src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
   <!-- LINE認証はGitHubの入口とGAS doPostで完了。GAS内では再初期化しません。 -->
 
-  <link rel="stylesheet" href="./app.css?v=free-startup-20261026-v1">
+  <link rel="stylesheet" href="./app.css?v=payroll-reserve-20261026-v1">
 
 </head>
 
@@ -192,7 +192,13 @@
           <div><dt>日給の残高</dt><dd id="dailyWageRemaining">—</dd></div>
           <div><dt>経費・立替金の残高</dt><dd id="dailyExpenseRemaining">—</dd></div>
           <div><dt>交通費の残高</dt><dd id="dailyTransportRemaining">—</dd></div>
-          <div class="daily-balance-total"><dt>残高合計</dt><dd id="dailyAvailable">—</dd></div>
+          <div><dt>当月の返済確保額</dt><dd id="dailyLoanDue">—</dd></div>
+          <div><dt>当月の社会保険料</dt><dd id="dailyInsuranceDue">—</dd></div>
+          <div><dt>前月までの未回収分</dt><dd id="dailyCarry">—</dd></div>
+          <div><dt>給与精算で確定済みの控除累計</dt><dd id="dailySettledDeduction">—</dd></div>
+          <div><dt>控除後の差引残高</dt><dd id="dailySignedAvailable">—</dd></div>
+          <div><dt>貸付の未返済残額</dt><dd id="dailyLoanRemaining">—</dd></div>
+          <div class="daily-balance-total"><dt>日払い申請可能額</dt><dd id="dailyAvailable">—</dd></div>
         </dl>
         <p id="dailySummaryStatus" class="note" role="status">残高を確認しています…</p>
         <button type="button" id="dailyRefresh" class="daily-refresh" onclick="refreshDailyAmounts_()" disabled>残高を更新</button>
@@ -207,7 +213,7 @@
       <div class="input-area">
         <label class="label" for="dailyAmount">希望する日払い額</label>
         <input type="number" id="dailyAmount" placeholder="例：5000" inputmode="numeric" min="1" step="1" aria-describedby="dailyAmountHint" disabled>
-        <p id="dailyAmountHint" class="note">残高合計の範囲内で申請できます。</p>
+        <p id="dailyAmountHint" class="note">返済・社会保険料の確保後の申請可能額まで申請できます。</p>
       </div>
       <button type="button" class="button secondary" id="dailyButton" onclick="submitDaily()" disabled>入力した金額で申請</button>
       <p class="note">申請した時点では残高・受取済額は変わりません。会社が支払を記録すると反映されます。</p>
@@ -418,6 +424,14 @@
     <label for="workShift">勤務区分</label>
     <select id="workShift"><option value="">選択してください</option><option value="日勤">日勤</option><option value="夜勤">夜勤</option></select>
     <label for="workSite">現場名（任意）</label><input id="workSite" maxlength="150" autocomplete="off">
+    <button type="button" class="button secondary" id="workAllowanceInToggle" aria-expanded="false" aria-controls="workAllowanceInPanel">手当を申請</button>
+    <div id="workAllowanceInPanel" hidden>
+      <label><input type="checkbox" id="workAllowanceInDriver" style="width:auto">運転手当（1,000円）</label>
+      <label><input type="checkbox" id="workAllowanceInOther" style="width:auto">その他（500円）</label>
+      <label for="workAllowanceInNote">手当の備考（その他を選んだ場合は必須）</label>
+      <textarea id="workAllowanceInNote" maxlength="1000"></textarea>
+      <p>両方申請できます。手当は会社承認後に残高へ反映します。</p>
+    </div>
     <button type="button" class="button" id="workClockInButton" disabled>上番を報告する</button>
   </div>
   <div id="workClockOutPanel" hidden>
@@ -431,6 +445,14 @@
     <p>残業がない場合は、そのまま下番を報告できます。</p>
     <div id="workOvertimeFields" hidden><label for="workOvertime">残業時間</label><select id="workOvertime"><option value="">選択してください</option></select></div>
     <label for="workNote">備考（任意）</label><textarea id="workNote" maxlength="1000"></textarea>
+    <button type="button" class="button secondary" id="workAllowanceOutToggle" aria-expanded="false" aria-controls="workAllowanceOutPanel">手当を申請</button>
+    <div id="workAllowanceOutPanel" hidden>
+      <label><input type="checkbox" id="workAllowanceOutDriver" style="width:auto">運転手当（1,000円）</label>
+      <label><input type="checkbox" id="workAllowanceOutOther" style="width:auto">その他（500円）</label>
+      <label for="workAllowanceOutNote">手当の備考（その他を選んだ場合は必須）</label>
+      <textarea id="workAllowanceOutNote" maxlength="1000"></textarea>
+      <p>両方申請できます。手当は会社承認後に残高へ反映します。</p>
+    </div>
     <button type="button" class="button" id="workClockOutButton" disabled>下番を報告する</button>
     <p>日給は下番後、通常1分程度で自動反映されます。残業代だけ会社承認後に加算します。</p>
   </div>
@@ -507,7 +529,7 @@ document.getElementById('startupStatus').textContent='本人確認・最新情�
 window.SHISHIDOGUMI_STARTUP_SHELL={shownAt:performance.now(),release(){form.inert=false;form.removeAttribute('aria-busy');document.getElementById('userInfo').style.display='';},fail(){form.inert=true;form.setAttribute('aria-busy','false');}};
 })();
 </script>
-<script src="./entry.js?v=free-startup-20261026-v1" defer></script>
+<script src="./entry.js?v=payroll-reserve-20261026-v1" defer></script>
 
 </body>
 
