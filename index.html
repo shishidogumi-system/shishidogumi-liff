@@ -13,12 +13,12 @@
 <meta name="referrer" content="no-referrer">
 <link rel="preconnect" href="https://script.google.com">
 <link rel="preconnect" href="https://script.googleusercontent.com">
-<link rel="preload" href="./app.js?v=startup-fast-20261023-v3" as="script">
+<link rel="preload" href="./app.js?v=free-startup-20261026-v1" as="script">
 <script defer src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
   <!-- LINE認証はGitHubの入口とGAS doPostで完了。GAS内では再初期化しません。 -->
 
-  <link rel="stylesheet" href="./app.css?v=startup-fast-20261023-v3">
+  <link rel="stylesheet" href="./app.css?v=free-startup-20261026-v1">
 
 </head>
 
@@ -455,7 +455,59 @@
 
 
 <dialog id="reviewDialog" aria-labelledby="reviewTitle"><h2 id="reviewTitle">申請内容の確認</h2><ul id="reviewList" class="review-list"></ul><div class="review-actions"><button type="button" class="button" id="reviewConfirm">この内容で提出する</button><button type="button" id="reviewCancel">戻って修正する</button></div></dialog>
-<script src="./entry.js?v=startup-fast-20261023-v3" defer></script>
+<script>
+(function(){
+    function getAllowedPage(value) {
+      const allowed = ['transport', 'daily', 'report', 'expense', 'shift', 'work'];
+      return allowed.includes(value) ? value : null;
+    }
+
+    function getPage() {
+      const searchParams = new URLSearchParams(window.location.search);
+      let page = getAllowedPage(searchParams.get('page'));
+      if (page) { sessionStorage.setItem('shishidogumi-startup-page',page); return page; }
+
+      const state = searchParams.get('liff.state');
+      if (state) {
+        let decoded = state;
+        for (let i = 0; i < 3; i++) {
+          try {
+            const next = decodeURIComponent(decoded);
+            if (next === decoded) break;
+            decoded = next;
+          } catch (error) {
+            break;
+          }
+        }
+        const match = decoded.match(
+          /(?:[?&]|%3F|%26)page(?:=|%3D)(transport|daily|report|expense|shift|work)/
+        );
+        if (match) {
+          page = getAllowedPage(match[1]);
+          if (page) { sessionStorage.setItem('shishidogumi-startup-page',page); return page; }
+        }
+        try {
+          const stateUrl = new URL(decoded, window.location.origin);
+          page = getAllowedPage(stateUrl.searchParams.get('page'));
+          if (page) { sessionStorage.setItem('shishidogumi-startup-page',page); return page; }
+        } catch (error) {}
+      }
+      const saved=sessionStorage.getItem('shishidogumi-startup-page');if(searchParams.has('code')&&searchParams.has('liffClientId')&&getAllowedPage(saved))return saved;return 'transport';
+    }
+
+
+
+const page=getPage(),names={transport:'交通費申請',daily:'日払い申請',report:'日報報告',expense:'経費申請',shift:'シフト申請',work:'勤務報告'},form=document.getElementById(page+'Form');
+if(!form)return;
+form.inert=true;form.setAttribute('aria-busy','true');form.classList.remove('hidden');
+document.getElementById('pageTitle').textContent=names[page];
+document.getElementById('loading').style.display='none';
+document.getElementById('userInfo').style.display='none';
+document.getElementById('startupStatus').textContent='本人確認・最新情報を確認中です。確認後に入力できます。';
+window.SHISHIDOGUMI_STARTUP_SHELL={shownAt:performance.now(),release(){form.inert=false;form.removeAttribute('aria-busy');document.getElementById('userInfo').style.display='';},fail(){form.inert=true;form.setAttribute('aria-busy','false');}};
+})();
+</script>
+<script src="./entry.js?v=free-startup-20261026-v1" defer></script>
 
 </body>
 
