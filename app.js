@@ -150,7 +150,7 @@ function renderDailyAmounts_(){
  const fields={dailyWageRemaining:'wageRemaining',dailyExpenseRemaining:'expenseRemaining',dailyTransportRemaining:'transportRemaining',dailyAvailable:'available',dailyLifetimeTotal:'lifetimeTotal',dailyReceivedTotal:'receivedTotal'};
  Object.keys(fields).forEach(id=>byId(id).textContent=dailySummary_?dailyMoney_(dailySummary_[fields[id]]):'—');
 
- ['dailyLoanDue','dailyInsuranceDue','dailyCarry','dailySettledDeduction','dailyLoanRemaining','dailyReserveTotal','dailySignedAvailable','dailyWageRemaining','dailyExpenseRemaining','dailyTransportRemaining','dailyAvailable','dailyLifetimeTotal','dailyReceivedTotal'].forEach(id=>{const el=byId(id);el.parentElement.hidden=!!dailySummary_&&Number(el.textContent.replace(/[^0-9.-]/g,''))===0;});
+ ['dailyLoanDue','dailyInsuranceDue','dailyCarry','dailySettledDeduction','dailyLoanRemaining','dailyReserveTotal','dailySignedAvailable','dailyWageRemaining','dailyExpenseRemaining','dailyTransportRemaining','dailyAvailable','dailyLifetimeTotal','dailyReceivedTotal'].forEach(id=>{const el=byId(id);el.parentElement.hidden=id!=='dailyAvailable'&&!!dailySummary_&&Number(el.textContent.replace(/[^0-9.-]/g,''))===0;});
  const enabled=Boolean(dailySummary_&&!dailyBalanceLoading_&&!pending.daily&&idToken&&currentUser),available=dailySummary_?dailySummary_.available:0;
  byId('dailyFullButton').disabled=!enabled||available<=0;byId('dailyButton').disabled=!enabled||available<=0;byId('dailyAmount').disabled=!enabled||available<=0;
  byId('dailyRefresh').disabled=dailyBalanceLoading_||pending.daily;
