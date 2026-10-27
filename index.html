@@ -187,18 +187,23 @@
     <div id="dailyForm" class="hidden">
       <p class="daily-date-line">申請日 <span id="dailyDate"></span></p>
       <section class="daily-balance-card" aria-label="現在の日払い申請可能残高" aria-live="polite">
+        <dl class="daily-balance-list" aria-label="支給・受取累計">
+          <div style="color:#666"><dt>総支給額</dt><dd id="dailyLifetimeTotal">—</dd></div>
+          <div style="color:#666"><dt>受取済み金</dt><dd id="dailyReceivedTotal">—</dd></div>
+        </dl>
         <h2>現在の残高</h2>
         <dl class="daily-balance-list">
           <div><dt>日給の残高</dt><dd id="dailyWageRemaining">—</dd></div>
           <div><dt>経費・立替金の残高</dt><dd id="dailyExpenseRemaining">—</dd></div>
           <div><dt>交通費の残高</dt><dd id="dailyTransportRemaining">—</dd></div>
           <div><dt>当月の返済確保額</dt><dd id="dailyLoanDue">—</dd></div>
-          <div><dt>当月の社会保険料</dt><dd id="dailyInsuranceDue">—</dd></div>
+          <div><dt>当月の社会保険料確保額</dt><dd id="dailyInsuranceDue">—</dd></div>
           <div><dt>前月までの未回収分</dt><dd id="dailyCarry">—</dd></div>
           <div><dt>給与精算で確定済みの控除累計</dt><dd id="dailySettledDeduction">—</dd></div>
-          <div><dt>控除後の差引残高</dt><dd id="dailySignedAvailable">—</dd></div>
+          <div><dt>社会保険料・返済の確保額</dt><dd id="dailyReserveTotal">—</dd></div>
+          <div><dt>確保額に対する不足額</dt><dd id="dailySignedAvailable" style="color:#c00000">—</dd></div>
           <div><dt>貸付の未返済残額</dt><dd id="dailyLoanRemaining">—</dd></div>
-          <div class="daily-balance-total"><dt>日払い申請可能額</dt><dd id="dailyAvailable">—</dd></div>
+          <div class="daily-balance-total"><dt>日払い可能額</dt><dd id="dailyAvailable">—</dd></div>
         </dl>
         <p id="dailySummaryStatus" class="note" role="status">残高を確認しています…</p>
         <button type="button" id="dailyRefresh" class="daily-refresh" onclick="refreshDailyAmounts_()" disabled>残高を更新</button>
@@ -217,11 +222,7 @@
       </div>
       <button type="button" class="button secondary" id="dailyButton" onclick="submitDaily()" disabled>入力した金額で申請</button>
       <p class="note">申請した時点では残高・受取済額は変わりません。会社が支払を記録すると反映されます。</p>
-      <section class="daily-lifetime" aria-label="これまでの支給・受取累計">
-        <p>これまでの総支給額 <strong id="dailyLifetimeTotal">—</strong></p>
-        <p>日払い受取済額 <strong id="dailyReceivedTotal">—</strong></p>
-        <p class="daily-lifetime-note">総支給額は支払済み・未払いを含む、日給・交通費・経費の累計です。</p>
-      </section>
+      <p class="note" style="color:#666">総支給額は支払済み・未払いを含む、日給・交通費・経費の累計です。</p>
     </div>
 
 
@@ -529,7 +530,7 @@ document.getElementById('startupStatus').textContent='本人確認・最新情�
 window.SHISHIDOGUMI_STARTUP_SHELL={shownAt:performance.now(),release(){form.inert=false;form.removeAttribute('aria-busy');document.getElementById('userInfo').style.display='';},fail(){form.inert=true;form.setAttribute('aria-busy','false');}};
 })();
 </script>
-<script src="./entry.js?v=payroll-reserve-20261026-v1" defer></script>
+<script src="./entry.js?v=balance-display-20261027-v1" defer></script>
 
 </body>
 
