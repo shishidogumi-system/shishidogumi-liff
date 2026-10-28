@@ -145,7 +145,9 @@ async function sendTransport_() {
 }
 
 function dailyMoney_(value){return Number(value).toLocaleString('ja-JP')+'円';}
+function renderDailyAllowances_(){const panel=byId('dailyAllowancePanel'),list=byId('dailyAllowanceList');list.replaceChildren();const requests=dailySummary_&&dailySummary_.allowanceRequests||[];panel.hidden=!requests.length;requests.forEach(a=>{const card=document.createElement('div'),heading=document.createElement('p');heading.textContent='勤務日 '+a.date+' ／ '+(a.status||'申請中');card.appendChild(heading);[['運転手当',a.driver],['その他手当',a.other]].forEach(([label,amount])=>{if(!amount)return;const row=document.createElement('div'),dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=label;dd.textContent=dailyMoney_(amount);row.append(dt,dd);const dl=document.createElement('dl');dl.className='daily-balance-list';dl.appendChild(row);card.appendChild(dl);});if(a.note){const note=document.createElement('p');note.textContent='備考 '+a.note;card.appendChild(note);}list.appendChild(card);});}
 function renderDailyAmounts_(){
+ renderDailyAllowances_();
  if(dailySummary_){const r=dailySummary_.reserve;const values={dailyLoanDue:-r.currentLoanPending,dailyInsuranceDue:-r.currentInsurancePending,dailyCarry:-r.carry,dailySettledDeduction:-r.settled,dailyLoanRemaining:r.loanRemaining,dailyReserveTotal:r.deductionTotal,dailySignedAvailable:Math.max(0,-dailySummary_.signedAvailable)};Object.entries(values).forEach(([id,value])=>{const el=byId(id);el.textContent=Number(value===0?0:value).toLocaleString('ja-JP')+'円';el.style.color=id==='dailySignedAvailable'||value<0?'#c00000':'';});}else{['dailyLoanDue','dailyInsuranceDue','dailyCarry','dailySettledDeduction','dailyLoanRemaining','dailyReserveTotal','dailySignedAvailable'].forEach(id=>{byId(id).textContent='—';byId(id).style.color='';});}
  const fields={dailyWageRemaining:'wageRemaining',dailyExpenseRemaining:'expenseRemaining',dailyTransportRemaining:'transportRemaining',dailyAvailable:'available',dailyLifetimeTotal:'lifetimeTotal',dailyReceivedTotal:'receivedTotal'};
  Object.keys(fields).forEach(id=>byId(id).textContent=dailySummary_?dailyMoney_(dailySummary_[fields[id]]):'—');
@@ -160,7 +162,7 @@ function renderDailyAmounts_(){
 }
 async function refreshDailyAmounts_(){
  if(pending.daily||provisionalBusy_)return;const serial=++dailySummarySerial_;dailyBalanceLoading_=true;dailySummary_=null;renderDailyAmounts_();byId('dailySummaryStatus').textContent='残高を確認しています…';
- try{const started=Date.now();const initial=!startupDailyConsumed_&&BOOTSTRAP.initialDailyBalance;startupDailyConsumed_=true;const result=initial?await Promise.resolve(initial):await callServer('employeeDailyBalance',{idToken:idToken});if(serial!==dailySummarySerial_)return;validateDailyBalance_(result);if(result.serverNow)workClockOffset_=result.serverNow-(started+Date.now())/2;dailySummary_=result;byId('dailyDate').textContent=result.today.replace(/-/g,'/');byId('dailySummaryStatus').textContent=result.available>0?'返済・社会保険料を確保した、この金額まで申請できます。':'返済・社会保険料の確保額を超えるまで、日払いは申請できません。';}
+ try{const started=Date.now();const initial=!startupDailyConsumed_&&BOOTSTRAP.initialDailyBalance;startupDailyConsumed_=true;const result=initial?await Promise.resolve(initial):await callServer('employeeDailyBalance',{idToken:idToken});if(serial!==dailySummarySerial_)return;validateDailyBalance_(result);if(result.serverNow)workClockOffset_=result.serverNow-(started+Date.now())/2;dailySummary_=result;byId('dailyDate').textContent=result.today.replace(/-/g,'/');byId('dailySummaryStatus').textContent='残業代・手当等は、会社承認後に加算されます';}
  catch(error){if(serial===dailySummarySerial_){dailySummary_=null;byId('dailySummaryStatus').textContent='残高を確認できませんでした。「残高を更新」で再確認してください。';showError(errorText(error,'残高を確認できませんでした。'));}}
  finally{if(serial===dailySummarySerial_){dailyBalanceLoading_=false;renderDailyAmounts_();}}
 }
@@ -170,7 +172,7 @@ async function sendDaily_(mode){
  try{requireAuthentication();if(!dailySummary_)throw new Error('先に残高を更新してください。');const snapshot=dailySummary_,amount=mode==='full'?snapshot.available:validAmount(byId('dailyAmount').value,'日払い申請金額');if(!Number.isSafeInteger(amount)||amount<=0||amount>snapshot.available)throw new Error('申請金額は1円以上、残高合計以下で入力してください。');
  pending.daily=true;renderDailyAmounts_();const requestId=requestFor_('daily-balance',JSON.stringify([snapshot.version,amount]));
  const result=await callServer('employeeDailyApply',{idToken:idToken,requestId:requestId,mode:mode,amount:amount,version:snapshot.version});
- if(!result||result.complete!==true||result.amount!==amount)throw new Error('受付結果を確認できませんでした。同じ内容で再送してください。');validateDailyBalance_(result.balance);dailySummary_=result.balance;byId('dailyAmount').value='';byId('dailySummaryStatus').textContent='申請を受け付けました。会社の支払後に残高が更新されます。';showMessage(result.message);
+ if(!result||result.complete!==true||result.amount!==amount)throw new Error('受付結果を確認できませんでした。同じ内容で再送してください。');validateDailyBalance_(result.balance);dailySummary_=result.balance;byId('dailyAmount').value='';byId('dailySummaryStatus').textContent='残業代・手当等は、会社承認後に加算されます';showMessage(result.message);
  }catch(error){showError(errorText(error,'日払い申請に失敗しました。'));}
  finally{pending.daily=false;renderDailyAmounts_();}
 }
