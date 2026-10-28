@@ -205,6 +205,7 @@
           <div><dt>貸付の未返済残額</dt><dd id="dailyLoanRemaining">—</dd></div>
           <div class="daily-balance-total"><dt>日払い可能額</dt><dd id="dailyAvailable">—</dd></div>
         </dl>
+        <section id="dailyAllowancePanel" hidden aria-label="手当の申請状況"><h3>手当の申請状況</h3><div id="dailyAllowanceList"></div></section>
         <p id="dailySummaryStatus" class="note" role="status">残高を確認しています…</p>
         <button type="button" id="dailyRefresh" class="daily-refresh" onclick="refreshDailyAmounts_()" disabled>残高を更新</button>
       </section>
@@ -530,7 +531,7 @@ document.getElementById('startupStatus').textContent='本人確認・最新情�
 window.SHISHIDOGUMI_STARTUP_SHELL={shownAt:performance.now(),release(){form.inert=false;form.removeAttribute('aria-busy');document.getElementById('userInfo').style.display='';},fail(){form.inert=true;form.setAttribute('aria-busy','false');}};
 })();
 </script>
-<script src="./entry.js?v=work-allowance-20261028-v1" defer></script>
+<script src="./entry.js?v=daily-allowance-20261028-v1" defer></script>
 
 </body>
 
