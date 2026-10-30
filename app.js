@@ -158,6 +158,21 @@ function renderApprovedAllowanceBalances_(){
  const values=dailySummary_&&dailySummary_.approvedAllowances||{},items=[['Driver','運転手当の残高','driver'],['Qualification','資格者手当の残高','qualification'],['Other','その他手当の残高','other']];let anchor=byId('dailyTransportRemaining').parentElement;
  items.forEach(([suffix,label,key])=>{const id='dailyApproved'+suffix;let value=byId(id),row;if(!value){row=document.createElement('div');const dt=document.createElement('dt');value=document.createElement('dd');value.id=id;dt.textContent=label;row.append(dt,value);anchor.after(row);}else row=value.parentElement;const amount=Number(values[key]||0);value.textContent=dailySummary_?dailyMoney_(amount):'—';row.hidden=!dailySummary_||!amount;anchor=row;});
 }
+function installDailyBalanceGroups_(){
+ const totalList=byId('dailyAvailable').parentElement.parentElement;
+ function group(id,title){let section=byId(id);if(!section){section=document.createElement('section');section.id=id;section.setAttribute('aria-label',title);const h=document.createElement('h3');h.textContent=title;h.style.cssText='margin:0 0 12px;font-size:1.05em';const dl=document.createElement('dl');dl.className='daily-balance-list';section.append(h,dl);totalList.before(section);}return section;}
+ const income=group('dailyIncomeSection','給与・交通費・手当の残高'),deductions=group('dailyDeductionsSection','天引き・確保する金額');deductions.style.cssText='background:#fff5f5;border:1px solid #efc5c5;border-radius:12px;padding:16px;margin:20px 0';
+ ['dailyWageRemaining','dailyExpenseRemaining','dailyTransportRemaining','dailyApprovedDriver','dailyApprovedQualification','dailyApprovedOther'].forEach(id=>{const el=byId(id);if(el)income.querySelector('dl').appendChild(el.parentElement);});
+ ['dailyInsuranceDue','dailyLoanDue','dailyCarry'].forEach(id=>deductions.querySelector('dl').appendChild(byId(id).parentElement));
+ byId('dailyLoanDue').parentElement.querySelector('dt').textContent='返済の確保額（当月）';
+ let progress=byId('dailyDeductionProgress');if(!progress){progress=document.createElement('section');progress.id='dailyDeductionProgress';progress.setAttribute('aria-label','確保の進み具合');progress.style.cssText='border-top:1px solid #efc5c5;margin-top:16px;padding-top:12px';const h=document.createElement('h4'),p=document.createElement('p'),dl=document.createElement('dl');h.textContent='確保の進み具合';h.style.margin='0 0 8px';p.className='note';p.textContent='未充当額は、確保額のうち、給与でまだ賄えていない金額です。';dl.className='daily-balance-list';progress.append(h,p,dl);deductions.appendChild(progress);}
+ ['dailyInsuranceUnfunded','dailySignedAvailable'].forEach(id=>progress.querySelector('dl').appendChild(byId(id).parentElement));progress.appendChild(byId('dailyInsuranceHint'));
+ let reference=byId('dailyDeductionReference');if(!reference){reference=document.createElement('details');reference.id='dailyDeductionReference';reference.style.margin='12px 0';const summary=document.createElement('summary'),dl=document.createElement('dl');summary.textContent='貸付残高・控除履歴（参考）';dl.className='daily-balance-list';reference.append(summary,dl);totalList.before(reference);}
+ ['dailyLoanRemaining','dailySettledDeduction'].forEach(id=>reference.querySelector('dl').appendChild(byId(id).parentElement));
+ reference.hidden=!!dailySummary_&&!dailySummary_.reserve.loanRemaining&&!dailySummary_.reserve.settled;
+ deductions.hidden=!!dailySummary_&&!dailySummary_.reserve.deductionTotal&&!dailySummary_.reserve.currentInsurance;
+ income.hidden=!!dailySummary_&&!(dailySummary_.dailyWageRemaining===undefined?dailySummary_.wageRemaining:dailySummary_.dailyWageRemaining)&&!(dailySummary_.dailyTransportRemaining===undefined?dailySummary_.transportRemaining:dailySummary_.dailyTransportRemaining)&&!(dailySummary_.dailyExpenseRemaining===undefined?dailySummary_.expenseRemaining:dailySummary_.dailyExpenseRemaining);
+}
 function insuranceDisplay_(balance){
  if(!balance)return null;const r=balance.reserve,fixed=r.currentInsurance===undefined?r.currentInsurancePending:r.currentInsurance,shortfall=Math.max(0,-balance.signedAvailable),unfunded=Math.min(r.currentInsurancePending,shortfall);
  return {fixed,unfunded,otherUnfunded:shortfall-unfunded,totalUnfunded:shortfall};
@@ -171,10 +186,11 @@ function installInsuranceDisplay_(){
 function renderDailyAmounts_(){
  installInsuranceDisplay_();
  renderApprovedAllowanceBalances_();
+ installDailyBalanceGroups_();
  renderSalarySchedules_();
 
  renderDailyAllowances_();
- if(dailySummary_){const r=dailySummary_.reserve,insurance=insuranceDisplay_(dailySummary_);const values={dailyLoanDue:-r.currentLoanPending,dailyInsuranceDue:insurance.fixed,dailyInsuranceUnfunded:-insurance.unfunded,dailyCarry:-r.carry,dailySettledDeduction:-r.settled,dailyLoanRemaining:r.loanRemaining,dailyReserveTotal:dailySummary_.dailyReservedDeduction===undefined?r.deductionTotal:dailySummary_.dailyReservedDeduction,dailySignedAvailable:-insurance.otherUnfunded};Object.entries(values).forEach(([id,value])=>{const el=byId(id);el.textContent=Number(value===0?0:value).toLocaleString('ja-JP')+'円';el.style.color=id==='dailySignedAvailable'||value<0?'#c00000':'';});}else{['dailyLoanDue','dailyInsuranceDue','dailyInsuranceUnfunded','dailyCarry','dailySettledDeduction','dailyLoanRemaining','dailyReserveTotal','dailySignedAvailable'].forEach(id=>{byId(id).textContent='—';byId(id).style.color='';});}
+ if(dailySummary_){const r=dailySummary_.reserve,insurance=insuranceDisplay_(dailySummary_);const values={dailyLoanDue:-r.currentLoanPending,dailyInsuranceDue:-insurance.fixed,dailyInsuranceUnfunded:-insurance.unfunded,dailyCarry:-r.carry,dailySettledDeduction:-r.settled,dailyLoanRemaining:r.loanRemaining,dailyReserveTotal:dailySummary_.dailyReservedDeduction===undefined?r.deductionTotal:dailySummary_.dailyReservedDeduction,dailySignedAvailable:-insurance.otherUnfunded};Object.entries(values).forEach(([id,value])=>{const el=byId(id);el.textContent=Number(value===0?0:value).toLocaleString('ja-JP')+'円';el.style.color=id==='dailySignedAvailable'||value<0?'#c00000':'';});}else{['dailyLoanDue','dailyInsuranceDue','dailyInsuranceUnfunded','dailyCarry','dailySettledDeduction','dailyLoanRemaining','dailyReserveTotal','dailySignedAvailable'].forEach(id=>{byId(id).textContent='—';byId(id).style.color='';});}
  const fields={dailyWageRemaining:'wageRemaining',dailyExpenseRemaining:'expenseRemaining',dailyTransportRemaining:'transportRemaining',dailyAvailable:'available',dailyLifetimeTotal:'lifetimeTotal',dailyReceivedTotal:'receivedTotal'};
  Object.keys(fields).forEach(id=>{const key=id==='dailyWageRemaining'&&dailySummary_&&dailySummary_.dailyBaseWageRemaining!==undefined?'dailyBaseWageRemaining':['dailyWageRemaining','dailyExpenseRemaining','dailyTransportRemaining'].includes(id)&&dailySummary_&&dailySummary_[id]!==undefined?id:fields[id];byId(id).textContent=dailySummary_?dailyMoney_(dailySummary_[key]):'—';});
 
