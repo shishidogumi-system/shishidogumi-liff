@@ -158,16 +158,30 @@ function renderApprovedAllowanceBalances_(){
  const values=dailySummary_&&dailySummary_.approvedAllowances||{},items=[['Driver','運転手当の残高','driver'],['Qualification','資格者手当の残高','qualification'],['Other','その他手当の残高','other']];let anchor=byId('dailyTransportRemaining').parentElement;
  items.forEach(([suffix,label,key])=>{const id='dailyApproved'+suffix;let value=byId(id),row;if(!value){row=document.createElement('div');const dt=document.createElement('dt');value=document.createElement('dd');value.id=id;dt.textContent=label;row.append(dt,value);anchor.after(row);}else row=value.parentElement;const amount=Number(values[key]||0);value.textContent=dailySummary_?dailyMoney_(amount):'—';row.hidden=!dailySummary_||!amount;anchor=row;});
 }
+function insuranceDisplay_(balance){
+ if(!balance)return null;const r=balance.reserve,fixed=r.currentInsurance===undefined?r.currentInsurancePending:r.currentInsurance,shortfall=Math.max(0,-balance.signedAvailable),unfunded=Math.min(r.currentInsurancePending,shortfall);
+ return {fixed,unfunded,otherUnfunded:shortfall-unfunded,totalUnfunded:shortfall};
+}
+function installInsuranceDisplay_(){
+ const due=byId('dailyInsuranceDue');due.parentElement.querySelector('dt').textContent='社会保険料（当月）';
+ if(!byId('dailyInsuranceUnfunded')){const row=document.createElement('div'),dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent='社会保険料の未充当額';dd.id='dailyInsuranceUnfunded';dd.textContent='—';row.append(dt,dd);due.parentElement.after(row);}
+ if(!byId('dailyInsuranceHint')){const p=document.createElement('p');p.id='dailyInsuranceHint';p.className='note';p.hidden=true;byId('dailyReserveTotal').parentElement.parentElement.after(p);}
+ byId('dailySignedAvailable').parentElement.querySelector('dt').textContent='その他の控除の未充当額';
+}
 function renderDailyAmounts_(){
+ installInsuranceDisplay_();
  renderApprovedAllowanceBalances_();
  renderSalarySchedules_();
- const reserveLabel=byId('dailyReserveTotal').parentElement.querySelector('dt');if(reserveLabel)reserveLabel.textContent='日払い分から確保する控除額';
+
  renderDailyAllowances_();
- if(dailySummary_){const r=dailySummary_.reserve;const values={dailyLoanDue:-r.currentLoanPending,dailyInsuranceDue:-r.currentInsurancePending,dailyCarry:-r.carry,dailySettledDeduction:-r.settled,dailyLoanRemaining:r.loanRemaining,dailyReserveTotal:dailySummary_.dailyReservedDeduction===undefined?r.deductionTotal:dailySummary_.dailyReservedDeduction,dailySignedAvailable:Math.max(0,-dailySummary_.signedAvailable)};Object.entries(values).forEach(([id,value])=>{const el=byId(id);el.textContent=Number(value===0?0:value).toLocaleString('ja-JP')+'円';el.style.color=id==='dailySignedAvailable'||value<0?'#c00000':'';});}else{['dailyLoanDue','dailyInsuranceDue','dailyCarry','dailySettledDeduction','dailyLoanRemaining','dailyReserveTotal','dailySignedAvailable'].forEach(id=>{byId(id).textContent='—';byId(id).style.color='';});}
+ if(dailySummary_){const r=dailySummary_.reserve,insurance=insuranceDisplay_(dailySummary_);const values={dailyLoanDue:-r.currentLoanPending,dailyInsuranceDue:insurance.fixed,dailyInsuranceUnfunded:-insurance.unfunded,dailyCarry:-r.carry,dailySettledDeduction:-r.settled,dailyLoanRemaining:r.loanRemaining,dailyReserveTotal:dailySummary_.dailyReservedDeduction===undefined?r.deductionTotal:dailySummary_.dailyReservedDeduction,dailySignedAvailable:-insurance.otherUnfunded};Object.entries(values).forEach(([id,value])=>{const el=byId(id);el.textContent=Number(value===0?0:value).toLocaleString('ja-JP')+'円';el.style.color=id==='dailySignedAvailable'||value<0?'#c00000':'';});}else{['dailyLoanDue','dailyInsuranceDue','dailyInsuranceUnfunded','dailyCarry','dailySettledDeduction','dailyLoanRemaining','dailyReserveTotal','dailySignedAvailable'].forEach(id=>{byId(id).textContent='—';byId(id).style.color='';});}
  const fields={dailyWageRemaining:'wageRemaining',dailyExpenseRemaining:'expenseRemaining',dailyTransportRemaining:'transportRemaining',dailyAvailable:'available',dailyLifetimeTotal:'lifetimeTotal',dailyReceivedTotal:'receivedTotal'};
  Object.keys(fields).forEach(id=>{const key=id==='dailyWageRemaining'&&dailySummary_&&dailySummary_.dailyBaseWageRemaining!==undefined?'dailyBaseWageRemaining':['dailyWageRemaining','dailyExpenseRemaining','dailyTransportRemaining'].includes(id)&&dailySummary_&&dailySummary_[id]!==undefined?id:fields[id];byId(id).textContent=dailySummary_?dailyMoney_(dailySummary_[key]):'—';});
 
- ['dailyLoanDue','dailyInsuranceDue','dailyCarry','dailySettledDeduction','dailyLoanRemaining','dailyReserveTotal','dailySignedAvailable','dailyWageRemaining','dailyExpenseRemaining','dailyTransportRemaining','dailyAvailable','dailyLifetimeTotal','dailyReceivedTotal'].forEach(id=>{const el=byId(id);el.parentElement.hidden=id!=='dailyAvailable'&&!!dailySummary_&&Number(el.textContent.replace(/[^0-9.-]/g,''))===0;});
+ ['dailyLoanDue','dailyInsuranceDue','dailyInsuranceUnfunded','dailyCarry','dailySettledDeduction','dailyLoanRemaining','dailyReserveTotal','dailySignedAvailable','dailyWageRemaining','dailyExpenseRemaining','dailyTransportRemaining','dailyAvailable','dailyLifetimeTotal','dailyReceivedTotal'].forEach(id=>{const el=byId(id);el.parentElement.hidden=id!=='dailyAvailable'&&!!dailySummary_&&Number(el.textContent.replace(/[^0-9.-]/g,''))===0;});
+ const insurance=insuranceDisplay_(dailySummary_),hint=byId('dailyInsuranceHint');
+ byId('dailyReserveTotal').parentElement.hidden=true;
+ if(insurance){byId('dailyInsuranceDue').parentElement.hidden=insurance.fixed===0;byId('dailyInsuranceUnfunded').parentElement.hidden=insurance.fixed===0;hint.hidden=insurance.fixed===0;hint.textContent=insurance.otherUnfunded>0?'社会保険料とその他の控除の確保には、あと'+dailyMoney_(insurance.totalUnfunded)+'必要です。':insurance.unfunded>0?'あと'+dailyMoney_(insurance.unfunded)+'の給与で社会保険料の確保が完了します。':'社会保険料の確保は完了しています。';}else hint.hidden=true;
  const enabled=Boolean(dailySummary_&&!dailyBalanceLoading_&&!pending.daily&&idToken&&currentUser),available=dailySummary_?dailySummary_.available:0;
  byId('dailyFullButton').disabled=!enabled||available<=0;byId('dailyButton').disabled=!enabled||available<=0;byId('dailyAmount').disabled=!enabled||available<=0;
  byId('dailyRefresh').disabled=dailyBalanceLoading_||pending.daily;
