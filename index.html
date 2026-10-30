@@ -13,12 +13,12 @@
 <meta name="referrer" content="no-referrer">
 <link rel="preconnect" href="https://script.google.com">
 <link rel="preconnect" href="https://script.googleusercontent.com">
-<link rel="preload" href="./app.js?v=shift-receipt-view-20261030-v4" as="script">
+<link rel="preload" href="./app.js?v=payroll-closing-qualification-20261030-v2" as="script">
 <script defer src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
   <!-- LINE認証はGitHubの入口とGAS doPostで完了。GAS内では再初期化しません。 -->
 
-  <link rel="stylesheet" href="./app.css?v=shift-receipt-view-20261030-v4">
+  <link rel="stylesheet" href="./app.css?v=payroll-closing-qualification-20261030-v2">
 
 <style id="shiftCalendarLayout">#shiftForm .calendar-grid,#shiftForm .calendar-weekdays{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}#shiftForm .calendar-weekdays{text-align:center;font-size:18px;margin-top:12px}#shiftForm .calendar-grid{margin-top:4px}#shiftForm .calendar-blank{display:block}#shiftForm .calendar-weekday{display:none}#shiftForm .calendar-day{min-width:0}</style>
 </head>
@@ -430,6 +430,7 @@
     <button type="button" class="button secondary" id="workAllowanceInToggle" aria-expanded="false" aria-controls="workAllowanceInPanel">手当を申請</button>
     <div id="workAllowanceInPanel" hidden>
       <label><input type="checkbox" id="workAllowanceInDriver" style="width:auto">運転手当（1,000円）</label>
+      <label><input type="checkbox" id="workAllowanceInQualified" style="width:auto">資格者配置手当（2,000円）</label>
       <label><input type="checkbox" id="workAllowanceInOther" style="width:auto">その他（500円）</label>
       <label for="workAllowanceInNote">手当の備考（その他を選んだ場合は必須）</label>
       <textarea id="workAllowanceInNote" maxlength="1000"></textarea>
@@ -451,6 +452,7 @@
     <button type="button" class="button secondary" id="workAllowanceOutToggle" aria-expanded="false" aria-controls="workAllowanceOutPanel">手当を申請</button>
     <div id="workAllowanceOutPanel" hidden>
       <label><input type="checkbox" id="workAllowanceOutDriver" style="width:auto">運転手当（1,000円）</label>
+      <label><input type="checkbox" id="workAllowanceOutQualified" style="width:auto">資格者配置手当（2,000円）</label>
       <label><input type="checkbox" id="workAllowanceOutOther" style="width:auto">その他（500円）</label>
       <label for="workAllowanceOutNote">手当の備考（その他を選んだ場合は必須）</label>
       <textarea id="workAllowanceOutNote" maxlength="1000"></textarea>
@@ -532,11 +534,12 @@ document.getElementById('startupStatus').textContent='本人確認・最新情�
 window.SHISHIDOGUMI_STARTUP_SHELL={shownAt:performance.now(),release(){form.inert=false;form.removeAttribute('aria-busy');document.getElementById('userInfo').style.display='';},fail(){form.inert=true;form.setAttribute('aria-busy','false');}};
 })();
 </script>
-<script src="./entry.js?v=shift-receipt-view-20261030-v4" defer></script>
+<script src="./entry.js?v=payroll-closing-qualification-20261030-v2" defer></script>
 
 </body>
 
 </html>
+
 
 
 
