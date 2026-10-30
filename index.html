@@ -13,12 +13,12 @@
 <meta name="referrer" content="no-referrer">
 <link rel="preconnect" href="https://script.google.com">
 <link rel="preconnect" href="https://script.googleusercontent.com">
-<link rel="preload" href="./app.js?v=income-deductions-20261030-v1" as="script">
+<link rel="preload" href="./app.js?v=simple-deductions-20261030-v1" as="script">
 <script defer src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
   <!-- LINE認証はGitHubの入口とGAS doPostで完了。GAS内では再初期化しません。 -->
 
-  <link rel="stylesheet" href="./app.css?v=income-deductions-20261030-v1">
+  <link rel="stylesheet" href="./app.css?v=simple-deductions-20261030-v1">
 
 <style id="shiftCalendarLayout">#shiftForm .calendar-grid,#shiftForm .calendar-weekdays{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}#shiftForm .calendar-weekdays{text-align:center;font-size:18px;margin-top:12px}#shiftForm .calendar-grid{margin-top:4px}#shiftForm .calendar-blank{display:block}#shiftForm .calendar-weekday{display:none}#shiftForm .calendar-day{min-width:0}</style>
 </head>
@@ -198,7 +198,7 @@
           <div><dt>経費・立替金の残高</dt><dd id="dailyExpenseRemaining">—</dd></div>
           <div><dt>交通費の残高</dt><dd id="dailyTransportRemaining">—</dd></div>
           <div><dt>当月の返済確保額</dt><dd id="dailyLoanDue">—</dd></div>
-          <div><dt>社会保険料（当月）</dt><dd id="dailyInsuranceDue">—</dd></div>
+          <div><dt>社会保険料</dt><dd id="dailyInsuranceDue">—</dd></div>
           <div><dt>前月までの未回収分</dt><dd id="dailyCarry">—</dd></div>
           <div><dt>給与精算で確定済みの控除累計</dt><dd id="dailySettledDeduction">—</dd></div>
           <div><dt>社会保険料・返済の確保額</dt><dd id="dailyReserveTotal">—</dd></div>
@@ -534,7 +534,7 @@ document.getElementById('startupStatus').textContent='本人確認・最新情�
 window.SHISHIDOGUMI_STARTUP_SHELL={shownAt:performance.now(),release(){form.inert=false;form.removeAttribute('aria-busy');document.getElementById('userInfo').style.display='';},fail(){form.inert=true;form.setAttribute('aria-busy','false');}};
 })();
 </script>
-<script src="./entry.js?v=income-deductions-20261030-v1" defer></script>
+<script src="./entry.js?v=simple-deductions-20261030-v1" defer></script>
 
 </body>
 
