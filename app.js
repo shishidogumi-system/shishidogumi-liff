@@ -161,7 +161,7 @@ function renderApprovedAllowanceBalances_(){
 function installDailyBalanceGroups_(){
  const totalList=byId('dailyAvailable').parentElement.parentElement;
  function group(id,title){let section=byId(id);if(!section){section=document.createElement('section');section.id=id;section.setAttribute('aria-label',title);const h=document.createElement('h3');h.textContent=title;h.style.cssText='margin:0 0 12px;font-size:1.05em';const dl=document.createElement('dl');dl.className='daily-balance-list';section.append(h,dl);totalList.before(section);}return section;}
- const income=group('dailyIncomeSection','給与・交通費・手当の残高'),deductions=group('dailyDeductionsSection','給与からの充当');deductions.style.cssText='border-top:1px solid #d6e0e8;padding-top:16px;margin:20px 0';
+ const income=group('dailyIncomeSection','給与・交通費・手当の残高'),deductions=group('dailyDeductionsSection','充当残額');deductions.style.cssText='border-top:1px solid #d6e0e8;padding-top:16px;margin:20px 0';
  ['dailyWageRemaining','dailyExpenseRemaining','dailyTransportRemaining','dailyApprovedDriver','dailyApprovedQualification','dailyApprovedOther'].forEach(id=>{const el=byId(id);if(el)income.querySelector('dl').appendChild(el.parentElement);});
  for(const [id,style] of [['dailyContributionBasis','font-size:.85em;color:#555;line-height:1.6;margin:8px 0'],['dailyContributionApplied','font-size:.95em;margin:12px 0']]){if(!byId(id)){const p=document.createElement('p');p.id=id;p.style.cssText=style;deductions.insertBefore(p,deductions.querySelector('dl'));}}
  deductions.querySelector('dl').appendChild(byId('dailySignedAvailable').parentElement);
