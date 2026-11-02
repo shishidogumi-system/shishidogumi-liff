@@ -13,12 +13,12 @@
 <meta name="referrer" content="no-referrer">
 <link rel="preconnect" href="https://script.google.com">
 <link rel="preconnect" href="https://script.googleusercontent.com">
-<link rel="preload" href="./app.js?v=work-outcomes-20261102-v1" as="script">
+<link rel="preload" href="./app.js?v=work-outcomes-20261102-v2" as="script">
 <script defer src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
   <!-- LINE認証はGitHubの入口とGAS doPostで完了。GAS内では再初期化しません。 -->
 
-  <link rel="stylesheet" href="./app.css?v=work-outcomes-20261102-v1">
+  <link rel="stylesheet" href="./app.css?v=work-outcomes-20261102-v2">
 
 <style id="shiftCalendarLayout">#shiftForm .calendar-grid,#shiftForm .calendar-weekdays{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}#shiftForm .calendar-weekdays{text-align:center;font-size:18px;margin-top:12px}#shiftForm .calendar-grid{margin-top:4px}#shiftForm .calendar-blank{display:block}#shiftForm .calendar-weekday{display:none}#shiftForm .calendar-day{min-width:0}</style>
 </head>
@@ -445,7 +445,7 @@
       <button type="button" class="button secondary" id="workProvisionalButton" onclick="submitProvisionalOut_('work')" disabled>仮下番を報告する</button>
       <p>仮下番後も、勤務終了時に正式な下番を報告してください。</p>
     </section>
-    <label for="workOutcome">報告内容</label><select id="workOutcome"><option value="normal">通常の下番</option><option value="siteCancelled">上番後の現場中止（会社確認が必要）</option><option value="withdraw">上番取りやめ（承認不要）</option></select>
+    <label for="workOutcome">報告内容</label><select id="workOutcome"><option value="normal">通常の下番</option><option value="siteCancelled">上番後の現場中止（承認必要）</option><option value="withdraw">上番取りやめ（承認不要）</option></select>
     <p id="workOutcomeHint"></p><div id="workNormalEnd">
     <label for="workHasOvertime"><input type="checkbox" id="workHasOvertime" style="width:auto;margin-right:10px">残業がありました</label>
     <p>残業がない場合は、そのまま下番を報告できます。</p>
@@ -536,7 +536,7 @@ document.getElementById('startupStatus').textContent='本人確認・最新情�
 window.SHISHIDOGUMI_STARTUP_SHELL={shownAt:performance.now(),release(){form.inert=false;form.removeAttribute('aria-busy');document.getElementById('userInfo').style.display='';},fail(){form.inert=true;form.setAttribute('aria-busy','false');}};
 })();
 </script>
-<script src="./entry.js?v=work-outcomes-20261102-v1" defer></script>
+<script src="./entry.js?v=work-outcomes-20261102-v2" defer></script>
 
 </body>
 
