@@ -13,12 +13,12 @@
 <meta name="referrer" content="no-referrer">
 <link rel="preconnect" href="https://script.google.com">
 <link rel="preconnect" href="https://script.googleusercontent.com">
-<link rel="preload" href="./app.js?v=salary-payday-20261102-v1" as="script">
+<link rel="preload" href="./app.js?v=contribution-statement-20261102-v1" as="script">
 <script defer src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
   <!-- LINE認証はGitHubの入口とGAS doPostで完了。GAS内では再初期化しません。 -->
 
-  <link rel="stylesheet" href="./app.css?v=salary-payday-20261102-v1">
+  <link rel="stylesheet" href="./app.css?v=contribution-statement-20261102-v1">
 
 <style id="shiftCalendarLayout">#shiftForm .calendar-grid,#shiftForm .calendar-weekdays{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}#shiftForm .calendar-weekdays{text-align:center;font-size:18px;margin-top:12px}#shiftForm .calendar-grid{margin-top:4px}#shiftForm .calendar-blank{display:block}#shiftForm .calendar-weekday{display:none}#shiftForm .calendar-day{min-width:0}</style>
 </head>
@@ -220,7 +220,7 @@
       <div class="input-area">
         <label class="label" for="dailyAmount">希望する日払い額</label>
         <input type="number" id="dailyAmount" placeholder="例：5000" inputmode="numeric" min="1" step="1" aria-describedby="dailyAmountHint" disabled>
-        <p id="dailyAmountHint" class="note">返済・社会保険料の確保後の申請可能額まで申請できます。</p>
+        <p id="dailyAmountHint" class="note">上の日払い可能額の範囲内で申請できます。</p>
       </div>
       <button type="button" class="button secondary" id="dailyButton" onclick="submitDaily()" disabled>入力した金額で申請</button>
       <p class="note">申請した時点では残高・受取済額は変わりません。会社が支払を記録すると反映されます。</p>
@@ -534,7 +534,7 @@ document.getElementById('startupStatus').textContent='本人確認・最新情�
 window.SHISHIDOGUMI_STARTUP_SHELL={shownAt:performance.now(),release(){form.inert=false;form.removeAttribute('aria-busy');document.getElementById('userInfo').style.display='';},fail(){form.inert=true;form.setAttribute('aria-busy','false');}};
 })();
 </script>
-<script src="./entry.js?v=salary-payday-20261102-v1" defer></script>
+<script src="./entry.js?v=contribution-statement-20261102-v1" defer></script>
 
 </body>
 
