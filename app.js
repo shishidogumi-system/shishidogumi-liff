@@ -161,27 +161,38 @@ function renderApprovedAllowanceBalances_(){
 function installDailyBalanceGroups_(){
  const totalList=byId('dailyAvailable').parentElement.parentElement;
  function group(id,title){let section=byId(id);if(!section){section=document.createElement('section');section.id=id;section.setAttribute('aria-label',title);const h=document.createElement('h3');h.textContent=title;h.style.cssText='margin:0 0 12px;font-size:1.05em';const dl=document.createElement('dl');dl.className='daily-balance-list';section.append(h,dl);totalList.before(section);}return section;}
- const income=group('dailyIncomeSection','給与・交通費・手当の残高'),deductions=group('dailyDeductionsSection','社会保険料・返済');deductions.style.cssText='border-top:1px solid #d6e0e8;padding-top:16px;margin:20px 0';
+ const income=group('dailyIncomeSection','給与・交通費・手当の残高'),deductions=group('dailyDeductionsSection','給与からの充当');deductions.style.cssText='border-top:1px solid #d6e0e8;padding-top:16px;margin:20px 0';
  ['dailyWageRemaining','dailyExpenseRemaining','dailyTransportRemaining','dailyApprovedDriver','dailyApprovedQualification','dailyApprovedOther'].forEach(id=>{const el=byId(id);if(el)income.querySelector('dl').appendChild(el.parentElement);});
- ['dailyInsuranceDue','dailyLoanDue','dailyCarry'].forEach(id=>deductions.querySelector('dl').appendChild(byId(id).parentElement));
- byId('dailyLoanDue').parentElement.querySelector('dt').textContent='貸付の返済（当月）';byId('dailyCarry').parentElement.querySelector('dt').textContent='前月からの繰越分';
- let progress=byId('dailyDeductionProgress');if(!progress){progress=document.createElement('section');progress.id='dailyDeductionProgress';progress.setAttribute('aria-label','日払いまでの不足額');progress.style.marginTop='12px';const dl=document.createElement('dl');dl.className='daily-balance-list';progress.appendChild(dl);deductions.appendChild(progress);}
- ['dailyInsuranceUnfunded','dailySignedAvailable'].forEach(id=>progress.querySelector('dl').appendChild(byId(id).parentElement));progress.appendChild(byId('dailyInsuranceHint'));
+ for(const [id,style] of [['dailyContributionBasis','font-size:.85em;color:#555;line-height:1.6;margin:8px 0'],['dailyContributionApplied','font-size:.95em;margin:12px 0']]){if(!byId(id)){const p=document.createElement('p');p.id=id;p.style.cssText=style;deductions.insertBefore(p,deductions.querySelector('dl'));}}
+ deductions.querySelector('dl').appendChild(byId('dailySignedAvailable').parentElement);
+ let progress=byId('dailyDeductionProgress');if(!progress){progress=document.createElement('section');progress.id='dailyDeductionProgress';deductions.appendChild(progress);}progress.hidden=true;
+ progress.appendChild(byId('dailyInsuranceUnfunded').parentElement);progress.appendChild(byId('dailyInsuranceHint'));
  let reference=byId('dailyDeductionReference');if(!reference){reference=document.createElement('details');reference.id='dailyDeductionReference';reference.style.margin='12px 0';const summary=document.createElement('summary'),dl=document.createElement('dl');summary.textContent='貸付残高・控除履歴（参考）';dl.className='daily-balance-list';reference.append(summary,dl);totalList.before(reference);}
- ['dailyLoanRemaining','dailySettledDeduction'].forEach(id=>reference.querySelector('dl').appendChild(byId(id).parentElement));
- reference.hidden=!!dailySummary_&&!dailySummary_.reserve.loanRemaining&&!dailySummary_.reserve.settled;
- deductions.hidden=!!dailySummary_&&!dailySummary_.reserve.deductionTotal&&!dailySummary_.reserve.currentInsurance;
+ ['dailyInsuranceDue','dailyLoanDue','dailyCarry','dailyLoanRemaining','dailySettledDeduction'].forEach(id=>reference.querySelector('dl').appendChild(byId(id).parentElement));
+ byId('dailyLoanDue').parentElement.querySelector('dt').textContent='貸付の返済（当月）';byId('dailyCarry').parentElement.querySelector('dt').textContent='前月からの繰越分';
+ reference.hidden=!!dailySummary_&&!dailySummary_.reserve.loanRemaining&&!dailySummary_.reserve.settled&&!dailySummary_.reserve.carry&&!dailySummary_.reserve.currentLoanPending;
  income.hidden=!!dailySummary_&&!(dailySummary_.dailyWageRemaining===undefined?dailySummary_.wageRemaining:dailySummary_.dailyWageRemaining)&&!(dailySummary_.dailyTransportRemaining===undefined?dailySummary_.transportRemaining:dailySummary_.dailyTransportRemaining)&&!(dailySummary_.dailyExpenseRemaining===undefined?dailySummary_.expenseRemaining:dailySummary_.dailyExpenseRemaining);
+}
+function renderContributionAmounts_(){
+ const data=insuranceDisplay_(dailySummary_),basis=byId('dailyContributionBasis'),applied=byId('dailyContributionApplied'),remaining=byId('dailySignedAvailable');
+ byId('dailyReserveTotal').parentElement.hidden=true;byId('dailyInsuranceUnfunded').parentElement.hidden=true;byId('dailyDeductionProgress').hidden=true;byId('dailyInsuranceHint').hidden=true;
+ byId('dailyDeductionsSection').hidden=!!data&&data.required===0;
+ remaining.parentElement.hidden=false;remaining.style.fontSize='1.25em';remaining.style.color=data&&data.totalUnfunded>0?'#c00000':'';
+ remaining.textContent=data?dailyMoney_(data.totalUnfunded?-data.totalUnfunded:0):'—';
+ if(!data){basis.textContent='社会保険料・返済額を確認しています…';applied.textContent='充当済み：—';return;}
+ basis.textContent=[['社会保険料',data.fixed],['返済（当月）',data.loan],['前月からの繰越分',data.carry],['その他の差引分',data.otherRequired]].filter(([,v])=>v>0).map(([label,v])=>label+'：'+dailyMoney_(v)).join(' ／ ');
+ applied.textContent='充当済み：'+dailyMoney_(data.applied);
 }
 function insuranceDisplay_(balance){
  if(!balance)return null;const r=balance.reserve,fixed=r.currentInsurance===undefined?r.currentInsurancePending:r.currentInsurance,shortfall=Math.max(0,-balance.signedAvailable),unfunded=Math.min(r.currentInsurancePending,shortfall);
- return {fixed,unfunded,otherUnfunded:shortfall-unfunded,totalUnfunded:shortfall};
+ const loan=Number(r.currentLoan===undefined?r.currentLoanPending||0:r.currentLoan),carry=Number(r.carry||0),required=Math.max(shortfall,fixed+loan+carry);
+ return {fixed,loan,carry,required,applied:required-shortfall,otherRequired:required-fixed-loan-carry,unfunded,otherUnfunded:shortfall-unfunded,totalUnfunded:shortfall};
 }
 function installInsuranceDisplay_(){
  const due=byId('dailyInsuranceDue');due.parentElement.querySelector('dt').textContent='社会保険料';
  if(!byId('dailyInsuranceUnfunded')){const row=document.createElement('div'),dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent='社会保険料の未充当額';dd.id='dailyInsuranceUnfunded';dd.textContent='—';row.append(dt,dd);due.parentElement.after(row);}
  if(!byId('dailyInsuranceHint')){const p=document.createElement('p');p.id='dailyInsuranceHint';p.className='note';p.hidden=true;byId('dailyReserveTotal').parentElement.parentElement.after(p);}
- byId('dailySignedAvailable').parentElement.querySelector('dt').textContent='日払いまでの不足額';
+ byId('dailySignedAvailable').parentElement.querySelector('dt').textContent='充当残額';
 }
 function renderDailyAmounts_(){
  installInsuranceDisplay_();
@@ -195,11 +206,7 @@ function renderDailyAmounts_(){
  Object.keys(fields).forEach(id=>{const key=id==='dailyWageRemaining'&&dailySummary_&&dailySummary_.dailyBaseWageRemaining!==undefined?'dailyBaseWageRemaining':['dailyWageRemaining','dailyExpenseRemaining','dailyTransportRemaining'].includes(id)&&dailySummary_&&dailySummary_[id]!==undefined?id:fields[id];byId(id).textContent=dailySummary_?dailyMoney_(dailySummary_[key]):'—';});
 
  ['dailyLoanDue','dailyInsuranceDue','dailyInsuranceUnfunded','dailyCarry','dailySettledDeduction','dailyLoanRemaining','dailyReserveTotal','dailySignedAvailable','dailyWageRemaining','dailyExpenseRemaining','dailyTransportRemaining','dailyAvailable','dailyLifetimeTotal','dailyReceivedTotal'].forEach(id=>{const el=byId(id);el.parentElement.hidden=id!=='dailyAvailable'&&!!dailySummary_&&Number(el.textContent.replace(/[^0-9.-]/g,''))===0;});
- const insurance=insuranceDisplay_(dailySummary_),hint=byId('dailyInsuranceHint');
- byId('dailyReserveTotal').parentElement.hidden=true;
- byId('dailyInsuranceUnfunded').parentElement.hidden=true;
- byId('dailyDeductionProgress').hidden=!insurance||insurance.totalUnfunded===0;
- if(insurance){byId('dailyInsuranceDue').parentElement.hidden=insurance.fixed===0;hint.hidden=insurance.totalUnfunded===0;hint.style.color='#c00000';hint.textContent='不足分を充当した後、プラスになった金額を日払いで申請できます。';}else hint.hidden=true;
+ renderContributionAmounts_();
  const enabled=Boolean(dailySummary_&&!dailyBalanceLoading_&&!pending.daily&&idToken&&currentUser),available=dailySummary_?dailySummary_.available:0;
  byId('dailyFullButton').disabled=!enabled||available<=0;byId('dailyButton').disabled=!enabled||available<=0;byId('dailyAmount').disabled=!enabled||available<=0;
  byId('dailyRefresh').disabled=dailyBalanceLoading_||pending.daily;
