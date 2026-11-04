@@ -14,7 +14,7 @@ let transportResult = null;
 let transportRequestId = null;
 let dailyRequestId = null;
 let dailyRequestAmount = null;
-let dailySummarySerial_=0,dailySummary_=null,dailyBalanceLoading_=false;
+let dailySummarySerial_=0,dailySummary_=null,dailyBalanceLoading_=false,dailyPayrollTimer_=null,dailyPayrollPolls_=0;
 let reportRequestId = null;
 let previewUrls = [];
 let receiptPreviewUrl = null;
@@ -208,16 +208,18 @@ function renderDailyAmounts_(){
 
  ['dailyLoanDue','dailyInsuranceDue','dailyInsuranceUnfunded','dailyCarry','dailySettledDeduction','dailyLoanRemaining','dailyReserveTotal','dailySignedAvailable','dailyWageRemaining','dailyExpenseRemaining','dailyTransportRemaining','dailyAvailable','dailyLifetimeTotal','dailyReceivedTotal'].forEach(id=>{const el=byId(id);el.parentElement.hidden=id!=='dailyAvailable'&&!!dailySummary_&&Number(el.textContent.replace(/[^0-9.-]/g,''))===0;});
  renderContributionAmounts_();renderDailyCancellation_();
- const enabled=Boolean(dailySummary_&&!dailyBalanceLoading_&&!pending.daily&&idToken&&currentUser),available=dailySummary_?dailySummary_.available:0;
+ const payrollPending=!!(dailySummary_&&dailySummary_.pendingPayrollDates&&dailySummary_.pendingPayrollDates.length);if(payrollPending)['dailyWageRemaining','dailyAvailable','dailyLifetimeTotal'].forEach(id=>{byId(id).textContent='更新中…';byId(id).parentElement.hidden=false;});
+ const enabled=Boolean(dailySummary_&&!payrollPending&&!dailyBalanceLoading_&&!pending.daily&&idToken&&currentUser),available=dailySummary_?dailySummary_.available:0;
  byId('dailyFullButton').disabled=!enabled||available<=0;byId('dailyButton').disabled=!enabled||available<=0;byId('dailyAmount').disabled=!enabled||available<=0;
  byId('dailyRefresh').disabled=dailyBalanceLoading_||pending.daily;
  byId('dailyAmount').max=String(available);byId('dailyFullButton').textContent=pending.daily?'申請中…':dailySummary_?'全額で申請（'+dailyMoney_(available)+'）':'全額で申請';
+ if(payrollPending)byId('dailyFullButton').textContent='日給を更新しています…';
  byId('dailyButton').textContent=pending.daily?'申請中…':'入力した金額で申請';
  renderProvisionalPanel_('daily',dailySummary_&&dailySummary_.provisionalWork);
 }
-async function refreshDailyAmounts_(){
- if(pending.daily||provisionalBusy_)return;const serial=++dailySummarySerial_;dailyBalanceLoading_=true;dailySummary_=null;renderDailyAmounts_();byId('dailySummaryStatus').textContent='残高を確認しています…';
- try{const started=Date.now();const initial=!startupDailyConsumed_&&BOOTSTRAP.initialDailyBalance;startupDailyConsumed_=true;const result=initial?await Promise.resolve(initial):await callServer('employeeDailyBalance',{idToken:idToken});if(serial!==dailySummarySerial_)return;validateDailyBalance_(result);if(result.serverNow)workClockOffset_=result.serverNow-(started+Date.now())/2;dailySummary_=result;byId('dailyDate').textContent=result.today.replace(/-/g,'/');byId('dailySummaryStatus').textContent='残業代・手当等は、会社承認後に加算されます';}
+async function refreshDailyAmounts_(automatic){
+ if(pending.daily||provisionalBusy_||dailyBalanceLoading_)return;if(dailyPayrollTimer_){clearTimeout(dailyPayrollTimer_);dailyPayrollTimer_=null;}if(automatic!==true)dailyPayrollPolls_=0;const serial=++dailySummarySerial_;dailyBalanceLoading_=true;dailySummary_=null;renderDailyAmounts_();byId('dailySummaryStatus').textContent='残高を確認しています…';
+ try{const started=Date.now();const initial=!startupDailyConsumed_&&BOOTSTRAP.initialDailyBalance;startupDailyConsumed_=true;const result=initial?await Promise.resolve(initial):await callServer('employeeDailyBalance',{idToken:idToken});if(serial!==dailySummarySerial_)return;validateDailyBalance_(result);if(result.serverNow)workClockOffset_=result.serverNow-(started+Date.now())/2;dailySummary_=result;byId('dailyDate').textContent=result.today.replace(/-/g,'/');if(result.pendingPayrollDates&&result.pendingPayrollDates.length){byId('dailySummaryStatus').textContent=dailyPayrollPolls_<12?'下番した勤務の日給を更新しています。自動で残高を再確認します。':'日給の更新に時間がかかっています。「残高を更新」で再確認してください。';if(dailyPayrollPolls_<12){dailyPayrollPolls_++;dailyPayrollTimer_=setTimeout(()=>{dailyPayrollTimer_=null;if(document.visibilityState!=='hidden')return refreshDailyAmounts_(true);},10000);}}else{dailyPayrollPolls_=0;byId('dailySummaryStatus').textContent='残業代・手当等は、会社承認後に加算されます';}}
  catch(error){if(serial===dailySummarySerial_){dailySummary_=null;byId('dailySummaryStatus').textContent='残高を確認できませんでした。「残高を更新」で再確認してください。';showError(errorText(error,'残高を確認できませんでした。'));}}
  finally{if(serial===dailySummarySerial_){dailyBalanceLoading_=false;renderDailyAmounts_();}}
 }
@@ -393,10 +395,11 @@ async function sendStaffName_() {
     // 申請用RPCの登録チェックを通さず、サーバーがLINEトークンを個別に検証します。
     const user = await new Promise(function(resolve, reject) {
       google.script.run.withSuccessHandler(resolve).withFailureHandler(reject)
-        .registerStaffName({idToken: idToken, realName: realName, guardRole: guardRole});
+        .registerStaffName({idToken: idToken, realName: realName, guardRole: guardRole, page: PAGE});
     });
     if (!user || !user.registered || user.needsNameRegistration) throw new Error('登録結果を確認できませんでした。もう一度登録してください。');
     currentUser = user;
+    for(const key of ['initialWorkState','initialDailyBalance','initialShiftState'])if(user[key])BOOTSTRAP[key]=user[key];
     byId('realName').value = '';
     showRegisteredApplication();
     if(PAGE==='work')refreshWorkReport_();
@@ -546,3 +549,5 @@ function updateWorkOutcomeUI_(){
 function renderDailyCancellation_(){
  const anchor=byId('dailyAvailable');if(!anchor)return;let note=byId('dailyCancellationNotice');if(!note){note=document.createElement('p');note.id='dailyCancellationNotice';note.style.cssText='background:#fff8db;border:1px solid #e8d58b;border-radius:10px;padding:12px;line-height:1.7';anchor.closest('dl').after(note);}const dates=dailySummary_&&dailySummary_.cancellationPendingDates||[];note.hidden=!dates.length;note.textContent='現場中止：'+dates.join('、')+'。支給内容は会社が確認中です。この勤務分は、確認完了まで日払い可能額に含まれません。';
 }
+
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'){if(dailyPayrollTimer_){clearTimeout(dailyPayrollTimer_);dailyPayrollTimer_=null;}return;}if(PAGE==='daily'&&idToken&&currentUser&&currentUser.registered&&!needsStaffRegistration())refreshDailyAmounts_();});
