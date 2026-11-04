@@ -71,10 +71,12 @@ function normalizeRoute(value) {
     .replace(/\s+/g, '|').replace(/\|+/g, '|');
 }
 function requestFor_(kind,signature) {
-  const key='shishidogumi-request:'+currentUser.userId+':'+kind;
-  try {const old=JSON.parse(sessionStorage.getItem(key)||'null');if(old&&old.signature===signature)return old.id;const id=newRequestId();sessionStorage.setItem(key,JSON.stringify({id:id,signature:signature}));return id;}catch(error){return newRequestId();}
+ const key='shishidogumi-request:'+currentUser.userId+':'+kind,memory=requestFor_.memory_||(requestFor_.memory_=Object.create(null));
+ let old=memory[key];if(!Object.prototype.hasOwnProperty.call(memory,key))try{old=JSON.parse(sessionStorage.getItem(key)||'null');}catch(e){}
+ if(old&&old.signature===signature){memory[key]=old;return old.id;}
+ const item={id:newRequestId(),signature:signature};memory[key]=item;try{sessionStorage.setItem(key,JSON.stringify(item));}catch(e){}return item.id;
 }
-function clearRequest_(kind) {try{sessionStorage.removeItem('shishidogumi-request:'+currentUser.userId+':'+kind);}catch(error){}}
+function clearRequest_(kind){const key='shishidogumi-request:'+currentUser.userId+':'+kind;(requestFor_.memory_||(requestFor_.memory_=Object.create(null)))[key]=null;try{sessionStorage.removeItem(key);}catch(e){}}
 function selectTransportTrip() {
   if(!transportResult)return;
   transportResult.tripType=byId('transportTripType').value;
@@ -499,7 +501,7 @@ async function submitWorkReport_(out){
   if(!out||normal){if(out)rows.push(['残業時間',minutes+'分']);rows.push(['資格者 現場配置手当',allowance.qualified?'2,000円':'なし'],['運転手当',allowance.driver?'1,000円':'なし'],['その他手当',allowance.other?'500円':'なし'],['手当の備考',allowance.note||'なし']);}else rows.push(['取扱い',mode==='withdraw'?'勤務報告の履歴に残しません。交通費などの申請履歴は残します。':'支給する日給・交通費と金額は会社が決定します。']);if(mode!=='withdraw')rows.push(['備考',note||'なし']);
   if(!await reviewSubmission_(out?(mode==='withdraw'?'上番取りやめの確認':mode==='siteCancelled'?'現場中止報告の確認':'下番報告の確認'):'上番報告の確認',rows))return;
   workReportBusy_=true;renderWorkReport_();byId('workReportStatus').textContent='報告内容を保存しています…';if(!out)workClockInRequest_=requestFor_('work-clock-in',JSON.stringify([BOOTSTRAP.today,shift,site,allowance]));
-  const result=await callServer(out?'workClockOut':'workClockIn',out?{idToken,workId:active.id,outcome:mode,minutes:Number(minutes),note,allowance}:{idToken,requestId:workClockInRequest_,shift,site,allowance});showMessage(result.message);
+  const result=await callServer(out?'workClockOut':'workClockIn',out?{idToken,workId:active.id,outcome:mode,minutes:Number(minutes),note,allowance}:{idToken,requestId:workClockInRequest_,shift,site,allowance});showMessage(result.message);clearRequest_('work-clock-in');
   if(result.withdrawn){workReportState_.history=workReportState_.history.filter(w=>w.id!==result.id);workReportState_.active=null;workClockInRequest_=null;byId('workReportStatus').textContent='上番を取りやめました。';}
   else{workReportState_.history=workReportState_.history.filter(w=>w.id!==result.work.id);workReportState_.history.unshift(result.work);workReportState_.active=result.work.status==='上番中'?result.work:null;byId('workReportStatus').textContent=out?(mode==='siteCancelled'?'現場中止を報告しました。支給内容は会社が確認します。':'下番を受け付けました。'):'上番を受け付けました。';if(!out){clearRequest_('work-clock-in');workClockInRequest_=null;}}
   if(out){byId('workOutcome').value='normal';byId('workOvertime').value='';byId('workHasOvertime').checked=false;byId('workOvertimeFields').hidden=true;byId('workNote').value='';fillWorkAllowance_('In');fillWorkAllowance_('Out');}
