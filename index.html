@@ -13,12 +13,12 @@
 <meta name="referrer" content="no-referrer">
 <link rel="preconnect" href="https://script.google.com">
 <link rel="preconnect" href="https://script.googleusercontent.com">
-<link rel="preload" href="./app.js?v=employee-speed-20261104-v7" as="script">
+<link rel="preload" href="./app.js?v=employee-reliable-20261104-v8" as="script">
 <script defer src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
   <!-- LINE認証はGitHubの入口とGAS doPostで完了。GAS内では再初期化しません。 -->
 
-  <link rel="stylesheet" href="./app.css?v=employee-speed-20261104-v7">
+  <link rel="stylesheet" href="./app.css?v=employee-reliable-20261104-v8">
 
 <style id="shiftCalendarLayout">#shiftForm .calendar-grid,#shiftForm .calendar-weekdays{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}#shiftForm .calendar-weekdays{text-align:center;font-size:18px;margin-top:12px}#shiftForm .calendar-grid{margin-top:4px}#shiftForm .calendar-blank{display:block}#shiftForm .calendar-weekday{display:none}#shiftForm .calendar-day{min-width:0}</style>
 </head>
@@ -494,7 +494,7 @@
     function getPage() {
       const searchParams = new URLSearchParams(window.location.search);
       let page = getAllowedPage(searchParams.get('page'));
-      if (page) { sessionStorage.setItem('shishidogumi-startup-page',page); return page; }
+      if (page) { try{sessionStorage.setItem('shishidogumi-startup-page',page);}catch(e){} return page; }
 
       const state = searchParams.get('liff.state');
       if (state) {
@@ -513,15 +513,15 @@
         );
         if (match) {
           page = getAllowedPage(match[1]);
-          if (page) { sessionStorage.setItem('shishidogumi-startup-page',page); return page; }
+          if (page) { try{sessionStorage.setItem('shishidogumi-startup-page',page);}catch(e){} return page; }
         }
         try {
           const stateUrl = new URL(decoded, window.location.origin);
           page = getAllowedPage(stateUrl.searchParams.get('page'));
-          if (page) { sessionStorage.setItem('shishidogumi-startup-page',page); return page; }
+          if (page) { try{sessionStorage.setItem('shishidogumi-startup-page',page);}catch(e){} return page; }
         } catch (error) {}
       }
-      const saved=sessionStorage.getItem('shishidogumi-startup-page');if(searchParams.has('code')&&searchParams.has('liffClientId')&&getAllowedPage(saved))return saved;return 'transport';
+      let saved;try{saved=sessionStorage.getItem('shishidogumi-startup-page');}catch(e){}if(searchParams.has('code')&&searchParams.has('liffClientId')&&getAllowedPage(saved))return saved;return 'transport';
     }
 
 
@@ -536,7 +536,7 @@ document.getElementById('startupStatus').textContent='本人確認・最新情�
 window.SHISHIDOGUMI_STARTUP_SHELL={shownAt:performance.now(),release(){form.inert=false;form.removeAttribute('aria-busy');document.getElementById('userInfo').style.display='';},fail(){form.inert=true;form.setAttribute('aria-busy','false');}};
 })();
 </script>
-<script src="./entry.js?v=employee-speed-20261104-v7" defer></script>
+<script src="./entry.js?v=employee-reliable-20261104-v8" defer></script>
 
 </body>
 

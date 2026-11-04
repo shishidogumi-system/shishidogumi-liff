@@ -323,7 +323,7 @@ async function sendReport_() {
     validateFiles(files, true);
     if (note.length > 4000) throw new Error('備考は4000文字以内で入力してください。');
     setBusy('report', 'reportButton', '日報を送信中…', '日報を報告する', ['reportPhotos', 'reportNote'], true);
-    if (!reportRequestId) reportRequestId = newRequestId();
+    reportRequestId=requestFor_('daily-report',JSON.stringify([note,files.map(f=>[f.name,f.size,f.lastModified])]));
     const started=performance.now();
     const fileData = await Promise.all(files.map(prepareReportPhoto_));
     byId('reportButton').textContent='写真を保存しています…';
@@ -333,6 +333,7 @@ async function sendReport_() {
     });
     console.info('daily-report-submit',{durationMs:Math.round(performance.now()-started),photos:files.length});
     showMessage(result);
+    clearRequest_('daily-report');reportRequestId=null;
     byId('reportPhotos').value = '';
     byId('reportNote').value = '';
     previewReportPhotos();
@@ -497,10 +498,10 @@ async function submitWorkReport_(out){
   const rows=out?[['勤務日（上番日）',active.date],['報告内容',mode==='siteCancelled'?'上番後の現場中止（承認必要）':mode==='withdraw'?'上番取りやめ（承認不要）':'通常の下番'],['報告時刻',workNowText_()],['勤務区分',active.shift]]:[['勤務日（上番日）',workNowDate_()],['上番現在時刻',workNowText_()],['勤務区分',shift],['現場名',site||'未入力']];
   if(!out||normal){if(out)rows.push(['残業時間',minutes+'分']);rows.push(['資格者 現場配置手当',allowance.qualified?'2,000円':'なし'],['運転手当',allowance.driver?'1,000円':'なし'],['その他手当',allowance.other?'500円':'なし'],['手当の備考',allowance.note||'なし']);}else rows.push(['取扱い',mode==='withdraw'?'勤務報告の履歴に残しません。交通費などの申請履歴は残します。':'支給する日給・交通費と金額は会社が決定します。']);if(mode!=='withdraw')rows.push(['備考',note||'なし']);
   if(!await reviewSubmission_(out?(mode==='withdraw'?'上番取りやめの確認':mode==='siteCancelled'?'現場中止報告の確認':'下番報告の確認'):'上番報告の確認',rows))return;
-  workReportBusy_=true;renderWorkReport_();byId('workReportStatus').textContent='報告内容を保存しています…';if(!out&&!workClockInRequest_)workClockInRequest_=crypto.randomUUID();
+  workReportBusy_=true;renderWorkReport_();byId('workReportStatus').textContent='報告内容を保存しています…';if(!out)workClockInRequest_=requestFor_('work-clock-in',JSON.stringify([BOOTSTRAP.today,shift,site,allowance]));
   const result=await callServer(out?'workClockOut':'workClockIn',out?{idToken,workId:active.id,outcome:mode,minutes:Number(minutes),note,allowance}:{idToken,requestId:workClockInRequest_,shift,site,allowance});showMessage(result.message);
   if(result.withdrawn){workReportState_.history=workReportState_.history.filter(w=>w.id!==result.id);workReportState_.active=null;workClockInRequest_=null;byId('workReportStatus').textContent='上番を取りやめました。';}
-  else{workReportState_.history=workReportState_.history.filter(w=>w.id!==result.work.id);workReportState_.history.unshift(result.work);workReportState_.active=result.work.status==='上番中'?result.work:null;byId('workReportStatus').textContent=out?(mode==='siteCancelled'?'現場中止を報告しました。支給内容は会社が確認します。':'下番を受け付けました。'):'上番を受け付けました。';if(!out)workClockInRequest_=null;}
+  else{workReportState_.history=workReportState_.history.filter(w=>w.id!==result.work.id);workReportState_.history.unshift(result.work);workReportState_.active=result.work.status==='上番中'?result.work:null;byId('workReportStatus').textContent=out?(mode==='siteCancelled'?'現場中止を報告しました。支給内容は会社が確認します。':'下番を受け付けました。'):'上番を受け付けました。';if(!out){clearRequest_('work-clock-in');workClockInRequest_=null;}}
   if(out){byId('workOutcome').value='normal';byId('workOvertime').value='';byId('workHasOvertime').checked=false;byId('workOvertimeFields').hidden=true;byId('workNote').value='';fillWorkAllowance_('In');fillWorkAllowance_('Out');}
  }catch(error){showError(errorText(error,'勤務報告を保存できませんでした。'));}finally{workReportBusy_=false;renderWorkReport_();}
 }
@@ -551,3 +552,8 @@ function renderDailyCancellation_(){
 }
 
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'){if(dailyPayrollTimer_){clearTimeout(dailyPayrollTimer_);dailyPayrollTimer_=null;}return;}if(PAGE==='daily'&&idToken&&currentUser&&currentUser.registered&&!needsStaffRegistration())refreshDailyAmounts_();});
+
+// Do not abandon a submission while its durable receipt is outstanding.
+function applicationSaving_(){return registeringName||workReportBusy_||provisionalBusy_||['transport','daily','report','expense','shift'].some(k=>pending[k]);}
+window.addEventListener('beforeunload',event=>{if(applicationSaving_()){event.preventDefault();event.returnValue='';}});
+document.addEventListener('click',event=>{const link=event.target.closest?.('a[href]');if(link&&applicationSaving_()){event.preventDefault();event.stopImmediatePropagation();showError('送信中です。受付結果が表示されるまで、この画面でお待ちください。');}},true);
