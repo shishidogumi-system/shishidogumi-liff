@@ -84,9 +84,14 @@ function selectTransportTrip() {
   byId('resultAmount').textContent='会社支給額'+Number(transportResult.amount).toLocaleString('ja-JP')+'円';byId('resultAmount').style.color=transportResult.amount===0?'#c00000':'';byId('resultRoute').textContent=transportResult.route+'\n'+transportResult.tripType+'運賃'+transportResult.actual.toLocaleString('ja-JP')+'円';byId('resultRoute').style.whiteSpace='pre-line';
   transportRequestId=null;
 }
+function showStationChoices_(choices){
+ let box=byId('stationChoices');if(!box){box=document.createElement('div');box.id='stationChoices';box.setAttribute('role','status');box.style.cssText='color:#c00000;white-space:pre-line;margin-top:20px;font-weight:700';byId('transportForm').appendChild(box);}
+ box.textContent=(choices||[]).map(x=>x.position+'：同じ名前の駅があります\n'+x.candidates.map(c=>c.name+(c.prefecture&&!c.name.includes(c.prefecture)?'（'+c.prefecture+'）':'')).join('\n')+(x.selected?'\n今回の計算：'+x.selected:'')+'\n府県名＋駅名で指定できます（例：兵庫県尼崎駅）。').join('\n\n');box.hidden=!(choices||[]).length;
+}
 function invalidateTransport() {
   transportResult = null;
   transportRequestId = null;
+  showStationChoices_([]);
   byId('resultBox').style.display = 'none';
   byId('transportButton').disabled = true;
 }
@@ -103,6 +108,8 @@ async function calculateFare() {
     const route = normalizeRoute(raw);
     setBusy('calculate', 'calculateButton', '運賃を計算中…', '運賃を計算する', ['route', 'transportDate', 'transportTripType'], true);
     const result = await callServer('calculateTransportFare', {idToken: idToken, route: route, date: date});
+    showStationChoices_(result&&result.stationChoices||[]);
+    if(result&&result.needsStationSelection){byId('stationChoices').scrollIntoView({behavior:'smooth',block:'nearest'});return;}
     if (!result || typeof result.routeDisplay !== 'string' || !Number.isFinite(result.oneWayFare) ||
         !Number.isFinite(result.roundTripFare) || result.oneWayFare < 0 || result.roundTripFare < 0) {
       throw new Error('運賃を取得できませんでした。');
