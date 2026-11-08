@@ -228,8 +228,8 @@ function renderDailyAmounts_(){
 }
 async function refreshDailyAmounts_(automatic){
  if(pending.daily||provisionalBusy_||dailyBalanceLoading_)return;if(dailyPayrollTimer_){clearTimeout(dailyPayrollTimer_);dailyPayrollTimer_=null;}if(automatic!==true)dailyPayrollPolls_=0;const serial=++dailySummarySerial_;dailyBalanceLoading_=true;dailySummary_=null;renderDailyAmounts_();byId('dailySummaryStatus').textContent='残高を確認しています…';
- try{const started=Date.now();const initial=!startupDailyConsumed_&&BOOTSTRAP.initialDailyBalance;startupDailyConsumed_=true;const result=initial?await Promise.resolve(initial):await callServer('employeeDailyBalance',{idToken:idToken});if(serial!==dailySummarySerial_)return;validateDailyBalance_(result);if(result.serverNow)workClockOffset_=result.serverNow-(started+Date.now())/2;dailySummary_=result;byId('dailyDate').textContent=result.today.replace(/-/g,'/');if(result.pendingPayrollDates&&result.pendingPayrollDates.length){byId('dailySummaryStatus').textContent=dailyPayrollPolls_<12?'下番した勤務の日給を更新しています。自動で残高を再確認します。':'日給の更新に時間がかかっています。「残高を更新」で再確認してください。';if(dailyPayrollPolls_<12){dailyPayrollPolls_++;dailyPayrollTimer_=setTimeout(()=>{dailyPayrollTimer_=null;if(document.visibilityState!=='hidden')return refreshDailyAmounts_(true);},10000);}}else{dailyPayrollPolls_=0;byId('dailySummaryStatus').textContent='残業代・手当等は、会社承認後に加算されます';}}
- catch(error){if(serial===dailySummarySerial_){dailySummary_=null;byId('dailySummaryStatus').textContent='残高を確認できませんでした。「残高を更新」で再確認してください。';showError(errorText(error,'残高を確認できませんでした。'));}}
+ try{const started=Date.now();const initial=!startupDailyConsumed_&&BOOTSTRAP.initialDailyBalance;startupDailyConsumed_=true;const result=initial?await Promise.resolve(initial):await callServer('employeeDailyBalance',{idToken:idToken});if(serial!==dailySummarySerial_)return;validateDailyBalance_(result);if(result.serverNow)workClockOffset_=result.serverNow-(started+Date.now())/2;dailySummary_=result;byId('dailyDate').textContent=result.today.replace(/-/g,'/');if(result.pendingPayrollDates&&result.pendingPayrollDates.length){byId('dailySummaryStatus').textContent=dailyPayrollPolls_<12?'下番した勤務の日給を更新しています。自動で残高を再確認します。':'日給の更新に時間がかかっています。「残高を更新」で再確認してください。';if(dailyPayrollPolls_<12){dailyPayrollPolls_++;dailyPayrollTimer_=setTimeout(()=>{dailyPayrollTimer_=null;if(document.visibilityState!=='hidden')return refreshDailyAmounts_(true);},2000);}}else{dailyPayrollPolls_=0;byId('dailySummaryStatus').textContent='残業代・手当等は、会社承認後に加算されます';}}
+ catch(error){if(serial===dailySummarySerial_){dailySummary_=null;const updating=/最新の申請内容を反映しています|給与・交通費・経費の反映を確認中/.test(errorText(error,''));if(updating&&dailyPayrollPolls_<3){dailyPayrollPolls_++;byId('dailySummaryStatus').textContent='申請内容を反映しています…';dailyPayrollTimer_=setTimeout(()=>{dailyPayrollTimer_=null;if(document.visibilityState!=='hidden')refreshDailyAmounts_(true);},1000);}else{byId('dailySummaryStatus').textContent='残高を確認できませんでした。「残高を更新」で再確認してください。';showError(errorText(error,'残高を確認できませんでした。'));}}}
  finally{if(serial===dailySummarySerial_){dailyBalanceLoading_=false;renderDailyAmounts_();}}
 }
 function validateDailyBalance_(b){
@@ -587,11 +587,11 @@ function openWorkWithoutReload_(event){
  if(event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey||applicationSaving_()||needsStaffRegistration()||!currentUser?.registered)return;
  const link=event.target.closest?.('a[href]');if(!link)return;
  let url;try{url=new URL(link.href);}catch(e){return;}
- if(url.origin!=='https://liff.line.me'||url.pathname!=='/2011785712-iKJrxFMX'||url.searchParams.get('page')!=='work')return;
- event.preventDefault();clearError();clearMessage();
- if(PAGE!=='work'){const here=new URL(location.href);here.searchParams.set('page','work');history.pushState({workNavigation:true},'',here);}
- PAGE='work';try{sessionStorage.setItem('shishidogumi-startup-page','work');}catch(e){}
- startupWorkConsumed_=true;workStateReady_=false;showRegisteredApplication();refreshWorkReport_();
+ if(url.origin!=='https://liff.line.me'||url.pathname!=='/2011785712-iKJrxFMX'||!['work','daily'].includes(url.searchParams.get('page')))return;
+ const targetPage=url.searchParams.get('page');event.preventDefault();clearError();clearMessage();
+ if(PAGE!==targetPage){const here=new URL(location.href);here.searchParams.set('page',targetPage);history.pushState({applicationNavigation:true},'',here);}
+ PAGE=targetPage;try{sessionStorage.setItem('shishidogumi-startup-page',targetPage);}catch(e){}
+ startupWorkConsumed_=true;startupDailyConsumed_=true;workStateReady_=false;showRegisteredApplication();if(targetPage==='work')refreshWorkReport_();
 }
 document.addEventListener('click',openWorkWithoutReload_);
-window.addEventListener('popstate',()=>{const page=new URL(location.href).searchParams.get('page');if(!forms[page]||applicationSaving_())return;PAGE=page;clearError();clearMessage();showRegisteredApplication();if(page==='work'){startupWorkConsumed_=true;workStateReady_=false;refreshWorkReport_();}});
+window.addEventListener('popstate',()=>{const page=new URL(location.href).searchParams.get('page');if(!forms[page]||applicationSaving_())return;PAGE=page;startupDailyConsumed_=true;clearError();clearMessage();showRegisteredApplication();if(page==='work'){startupWorkConsumed_=true;workStateReady_=false;refreshWorkReport_();}});
