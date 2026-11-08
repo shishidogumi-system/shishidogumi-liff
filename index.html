@@ -13,7 +13,7 @@
 <meta name="referrer" content="no-referrer">
 <link rel="preconnect" href="https://script.google.com">
 <link rel="preconnect" href="https://script.googleusercontent.com">
-<link rel="preload" href="./app.js?v=daily-immediate-20261108-v1" as="script">
+<link rel="preload" href="./app.js?v=report-names-fast-20261108-v1" as="script">
 <script defer src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
   <!-- LINE認証はGitHubの入口とGAS doPostで完了。GAS内では再初期化しません。 -->
@@ -21,6 +21,7 @@
   <link rel="stylesheet" href="./app.css?v=employee-reliable-20261104-v9">
 
 <style id="shiftCalendarLayout">#shiftForm .calendar-grid,#shiftForm .calendar-weekdays{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}#shiftForm .calendar-weekdays{text-align:center;font-size:18px;margin-top:12px}#shiftForm .calendar-grid{margin-top:4px}#shiftForm .calendar-blank{display:block}#shiftForm .calendar-weekday{display:none}#shiftForm .calendar-day{min-width:0}</style>
+<style>#reportQualifiedPlacement{width:26px!important;min-height:26px!important;height:26px;padding:0!important;vertical-align:middle}</style>
 </head>
 
 
@@ -236,24 +237,15 @@
       id="reportForm"
       class="hidden">
 
-      <div class="input-area">
-
-        <label class="label">
-          報告日
-        </label>
-
-        <div
-          class="fixed-date"
-          id="reportDate">
-        </div>
-
-        <div class="note">
-          送信日は日本時間の今日の日付です。日報の日付は写真から読み取ります。
-        </div>
-
-      </div>
-
-
+<section id="reportNamesCard" hidden class="input-area"><h3>会社名・現場名の確認</h3><p id="reportNamesState" role="status"></p><p id="reportNamesEvidence" class="note"></p><label class="label" for="reportConfirmCompany">集計する会社名</label><input id="reportConfirmCompany" list="reportCompanyCandidates" maxlength="150"><datalist id="reportCompanyCandidates"></datalist><label class="label" for="reportConfirmSite">集計する現場名</label><input id="reportConfirmSite" list="reportSiteCandidates" maxlength="150"><datalist id="reportSiteCandidates"></datalist><p class="note">写真と照合して確認してください。読み取り結果は候補です。人数は変更されません。</p><button type="button" id="reportNamesRefresh" onclick="refreshReportNames_(false)">照合結果を再読込</button><button type="button" id="reportNamesConfirm" onclick="confirmReportNames_()">この名称で人数集計を確定</button></section><div id="reportDate" class="hidden"></div>
+<div class="input-area"><label class="label" for="reportWorkDate">勤務日</label><input type="date" id="reportWorkDate" required><p id="reportWeekday" class="note"></p></div>
+<div class="input-area"><label class="label" for="reportCompany">会社名</label><input id="reportCompany" type="text" maxlength="150" placeholder="例：株式会社〇〇組"></div>
+<div class="input-area"><label class="label" for="reportSite">現場名</label><input id="reportSite" type="text" maxlength="150" placeholder="日報に記載された現場名"><p id="reportOptionsStatus" class="note"></p></div>
+<div class="input-area"><label class="label" for="reportShift">勤務区分</label><select id="reportShift"><option value="">選択してください</option><option>日勤</option><option>夜勤</option></select></div>
+<div class="input-area"><label class="label" for="reportQualifiedPlacement"><input id="reportQualifiedPlacement" type="checkbox" onchange="toggleReportQualified_()"> 交通誘導警備員資格者配置</label><div id="reportQualifiedFields" hidden><label class="label" for="reportCountA">資格者配置の人数（警備員A・名）</label><input id="reportCountA" type="number" min="0" max="999" step="1" inputmode="numeric" value="0" disabled><label class="label" for="reportQualifiedNames">資格者配置の氏名（1名ずつ改行）</label><textarea id="reportQualifiedNames" maxlength="40000" placeholder="田中 太郎&#10;佐藤 次郎" disabled></textarea><p class="note">人数と氏名の数を一致させてください。資格を持っていても一般配置での勤務は警備員Bです。</p></div></div>
+<div class="input-area"><label class="label" for="reportCountB">警備員B（一般配置で勤務・名）</label><input id="reportCountB" type="number" min="0" max="999" step="1" inputmode="numeric" value="0"><p class="note">資格保有者でも資格者配置でない勤務はBに入力します。同じ人をA・B両方に含めないでください。</p><p id="reportTotal">合計：0名</p></div>
+<div class="input-area"><label class="label" for="reportSiteCars">現場側が用意した規制車 使用台数（台）</label><input id="reportSiteCars" type="number" min="0" max="999" step="1" inputmode="numeric" value="0"><label class="label" for="reportSiteDrivers">現場側の規制車 運転人数（名）</label><input id="reportSiteDrivers" type="number" min="0" max="999" step="1" inputmode="numeric" value="0"></div>
+<div class="input-area"><label class="label" for="reportOwnCars">宍戸組所有の規制車 使用台数（台）</label><input id="reportOwnCars" type="number" min="0" max="999" step="1" inputmode="numeric" value="0"><label class="label" for="reportOwnDrivers">宍戸組所有の規制車 運転人数（名）</label><input id="reportOwnDrivers" type="number" min="0" max="999" step="1" inputmode="numeric" value="0"><p class="note">運転人数は警備員A・Bの人数に追加されません。使用なし・運転なしは0を入力してください。</p></div>
       <div class="input-area">
 
         <label
@@ -536,8 +528,13 @@ document.getElementById('startupStatus').textContent='本人確認・最新情�
 window.SHISHIDOGUMI_STARTUP_SHELL={shownAt:performance.now(),release(){form.inert=false;form.removeAttribute('aria-busy');document.getElementById('userInfo').style.display='';},fail(){form.inert=true;form.setAttribute('aria-busy','false');}};
 })();
 </script>
-<script src="./entry.js?v=daily-immediate-20261108-v1" defer></script>
+<script src="./entry.js?v=report-names-fast-20261108-v1" defer></script>
 
 </body>
 
 </html>
+
+
+
+
+
