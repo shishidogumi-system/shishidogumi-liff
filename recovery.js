@@ -19,7 +19,7 @@
     try{
      const result=await send(method,data);
      if(result===undefined||result===null||result.complete===false)throw Error('保存結果を確認できませんでした。同じ内容で受付を確認してください。');
-     const receipt={...record,state:'received',message:typeof result==='string'?result:String(result.message||'受付結果を受信しました。'),receipt:result.receipt||'',updated:Date.now()};delete receipt.payload;
+     const receipt={...record,state:'received',message:typeof result==='string'?result:String(result.message||'受付結果を受信しました。'),receipt:result.namesConfirmed===true?'':result.receipt||'',updated:Date.now()};delete receipt.payload;
      // A failed local acknowledgement must not turn a server success into a failed application.
      try{await store.put(receipt);}catch(e){notify?.('ack-storage-failed',record);}
      notify?.('received',receipt);return result;
