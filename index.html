@@ -13,7 +13,7 @@
 <meta name="referrer" content="no-referrer">
 <link rel="preconnect" href="https://script.google.com">
 <link rel="preconnect" href="https://script.googleusercontent.com">
-<link rel="preload" href="./app.js?v=daily-details-20261110-v1" as="script">
+<link rel="preload" href="./app-summary-20261110-v2.js" as="script">
 <script defer src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
   <!-- LINE認証はGitHubの入口とGAS doPostで完了。GAS内では再初期化しません。 -->
@@ -188,30 +188,15 @@
 
     <div id="dailyForm" class="hidden">
       <p class="daily-date-line">申請日 <span id="dailyDate"></span></p>
-      <section class="daily-balance-card" aria-label="現在の日払い申請可能残高" aria-live="polite">
-        <dl class="daily-balance-list" aria-label="支給・受取累計">
-          <div style="color:#666"><dt>総支給額</dt><dd id="dailyLifetimeTotal">—</dd></div>
-          <div style="color:#666"><dt>受取済み金</dt><dd id="dailyReceivedTotal">—</dd></div>
-        </dl>
-        <h2>現在の残高</h2>
-        <dl class="daily-balance-list">
-          <div><dt>給与額</dt><dd id="dailyWageRemaining">—</dd></div>
-          <div><dt>経費・立替金</dt><dd id="dailyExpenseRemaining">—</dd></div>
-          <div><dt>交通費</dt><dd id="dailyTransportRemaining">—</dd></div>
-          <div><dt>当月の返済確保額</dt><dd id="dailyLoanDue">—</dd></div>
-          <div><dt>社会保険料</dt><dd id="dailyInsuranceDue">—</dd></div>
-          <div><dt>前月までの未回収分</dt><dd id="dailyCarry">—</dd></div>
-          <div><dt>給与精算で確定済みの控除累計</dt><dd id="dailySettledDeduction">—</dd></div>
-          <div><dt>社会保険料・返済の確保額</dt><dd id="dailyReserveTotal">—</dd></div>
-          <div><dt>確保額に対する不足額</dt><dd id="dailySignedAvailable" style="color:#c00000">—</dd></div>
-          <div><dt>貸付の未返済残額</dt><dd id="dailyLoanRemaining">—</dd></div>
-          <div class="daily-balance-total"><dt>日払い可能額</dt><dd id="dailyAvailable">—</dd></div>
-        </dl>
-        <section id="dailyAllowancePanel" hidden aria-label="手当の申請状況" style="background:#FFF8DB;color:#111;border:1px solid #E8D58B;border-radius:12px;padding:16px;margin:20px 0"><h3 style="margin-top:0">手当の申請状況</h3><p class="note" style="color:#111">申請中の手当は、日払い可能額に含まれていません</p><div id="dailyAllowanceList"></div></section>
-        <p id="dailySummaryStatus" class="note" role="status">残高を確認しています…</p>
-        <button type="button" id="dailyRefresh" class="daily-refresh" onclick="refreshDailyAmounts_()" disabled>残高を更新</button>
-      </section>
-      <section id="dailyProvisionalPanel" hidden class="daily-balance-card">
+      <section class="daily-balance-card" aria-label="日払い残高">
+ <dl class="daily-balance-list"><div><dt>残高</dt><dd id="dailyGrossCompact">—</dd></div><div class="daily-balance-total"><dt>未精算（日払い可能額）</dt><dd id="dailyAvailable">—</dd></div></dl>
+ <p class="note">残高は支払い前の未受取額、日払い可能額は保険料・返済・給与日支払い分などを差し引いた金額です。</p>
+ <p id="dailySummaryStatus" class="note" role="status">残高を確認しています…</p><p id="dailyProcessingCompact" class="note"></p>
+ <button type="button" id="dailyRefresh" class="daily-refresh" onclick="refreshDailyAmounts_()" disabled>残高を更新</button>
+ <button type="button" id="dailyDetailsButton" class="daily-refresh" aria-expanded="false" onclick="toggleDailyBreakdown_()">詳細を確認</button>
+ <section id="dailyBreakdownPanel" hidden><h3>給与・交通費・手当・保険料・貸付の内訳</h3><p id="dailyBreakdownStatus" role="status"></p><div id="dailyBreakdownBody"></div><button type="button" onclick="refreshDailyBreakdown_()">内訳を更新</button><h3>月別の勤務・申請・支払履歴</h3><label for="dailyHistoryMonth">表示する月</label><input id="dailyHistoryMonth" type="month" onchange="dailyHistorySerial_++;byId('dailyHistoryBody').replaceChildren();byId('dailyHistoryStatus').textContent='この月の履歴を表示してください。';"><button type="button" onclick="loadDailyHistory_()">この月の履歴を表示</button><p id="dailyHistoryStatus" role="status"></p><div id="dailyHistoryBody"></div></section>
+ </section>
+<section id="dailyProvisionalPanel" hidden class="daily-balance-card">
         <p id="dailyProvisionalInfo" style="white-space:pre-line"></p>
         <button type="button" class="button secondary" id="dailyProvisionalButton" onclick="submitProvisionalOut_('daily')" disabled>仮下番を報告する</button>
         <p class="note">仮下番で日給を日払い可能額へ反映します。勤務終了後には正式な下番報告が必要です。</p>
@@ -225,7 +210,7 @@
       </div>
       <button type="button" class="button secondary" id="dailyButton" onclick="submitDaily()" disabled>入力した金額で申請</button>
       <p class="note">申請した時点では残高・受取済額は変わりません。会社が支払を記録すると反映されます。</p>
-      <p class="note" style="color:#666">総支給額は支払済み・未払いを含む、日給・交通費・経費の累計です。</p>
+      
     </div>
 
 
@@ -528,8 +513,8 @@ document.getElementById('startupStatus').textContent='本人確認・最新情�
 window.SHISHIDOGUMI_STARTUP_SHELL={shownAt:performance.now(),release(){form.inert=false;form.removeAttribute('aria-busy');document.getElementById('userInfo').style.display='';},fail(){form.inert=true;form.setAttribute('aria-busy','false');}};
 })();
 </script>
-<script src="./recovery.js?v=daily-details-20261110-v1" defer></script>
-<script src="./entry.js?v=daily-details-20261110-v1" defer></script>
+<script src="./recovery.js?v=daily-summary-20261110-v2" defer></script>
+<script src="./entry-summary-20261110-v2.js" defer></script>
 
 </body>
 
