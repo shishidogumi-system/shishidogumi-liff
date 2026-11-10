@@ -59,7 +59,7 @@ function renderPendingWorkRequests_(){
  let panel=byId('dailyPendingWork');if(!panel){panel=document.createElement('section');panel.id='dailyPendingWork';panel.style.cssText='background:#fff8db;color:#111;border:1px solid #ead783;border-radius:12px;padding:16px;margin:18px 0;overflow-wrap:anywhere';panel.setAttribute('aria-live','polite');byId('dailyDetailsButton').before(panel);}
  panel.replaceChildren();const requests=dailySummary_?.pendingWorkRequests||dailySummary_?.allowanceRequests||[];panel.hidden=true;
  for(const x of requests){const lines=pendingAllowanceLines_(x);if(!lines.length)continue;if(panel.hidden){panel.hidden=false;const title=document.createElement('h3');title.textContent='手当・残業の申請状況';title.style.marginTop='0';panel.append(title);const hint=document.createElement('p');hint.textContent='申請中の金額は、日払い可能額に含まれていません。';panel.append(hint);}
- const card=document.createElement('div');card.style.cssText='border-top:1px solid #ead783;padding:12px 0';const date=document.createElement('strong');date.textContent=x.date+(x.shift?'　'+x.shift:'')+(x.clockIn?'（上番 '+x.clockIn+'）':'');card.append(date);for(const text of lines){const line=document.createElement('p');line.textContent=text;line.style.cssText='margin:8px 0 0;line-height:1.6';card.append(line);}panel.append(card);}
+ const card=document.createElement('div');card.style.cssText='border-top:1px solid #ead783;padding:12px 0';const date=document.createElement('strong');date.textContent=x.date+(x.shift?'　'+x.shift:'');card.append(date);for(const text of lines){const line=document.createElement('p');line.textContent=text;line.style.cssText='margin:8px 0 0;line-height:1.6';card.append(line);}panel.append(card);}
 }
 
 
