@@ -189,7 +189,7 @@
     <div id="dailyForm" class="hidden">
       <p class="daily-date-line">申請日 <span id="dailyDate"></span></p>
       <section class="daily-balance-card" aria-label="日払い残高">
- <dl class="daily-balance-list"><div><dt>未払い残高（控除前）</dt><dd id="dailyGrossCompact">—</dd></div><div class="daily-balance-total"><dt>日払い可能額</dt><dd id="dailyAvailable">—</dd></div></dl>
+ <dl class="daily-balance-list"><div><dt>未払い残高</dt><dd id="dailyGrossCompact">—</dd></div><div class="daily-balance-total"><dt>日払い可能額</dt><dd id="dailyAvailable">—</dd></div></dl>
  <p class="note">未払い残高から保険料・返済・給与日支払い分などを差し引いた金額が、日払い可能額です。</p>
  <p id="dailySummaryStatus" class="note" role="status">残高を確認しています…</p><p id="dailyProcessingCompact" class="note"></p>
  <button type="button" id="dailyRefresh" class="daily-refresh" onclick="refreshDailyAmounts_()" disabled>残高を更新</button>
@@ -514,7 +514,7 @@ window.SHISHIDOGUMI_STARTUP_SHELL={shownAt:performance.now(),release(){form.iner
 })();
 </script>
 <script src="./recovery.js?v=daily-summary-20261110-v2" defer></script>
-<script src="./entry-labels-20261110-v1.js" defer></script>
+<script src="./entry-labels-20261110-v1.js?wording=2" defer></script>
 
 </body>
 
