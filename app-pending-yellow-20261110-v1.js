@@ -20,7 +20,7 @@ async function toggleDailyBreakdown_(){
 function appendDailyDetailLine_(parent,label,value,color){const row=document.createElement('p'),title=document.createElement('span'),amount=document.createElement('strong');row.style.cssText='display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;border-bottom:1px solid #dce5ee;padding:12px 0';title.textContent=label;amount.textContent=value;if(color)amount.style.color=color;row.append(title,amount);parent.append(row);}
 async function refreshDailyBreakdown_(){
  const serial=++dailyBreakdownRequest_,status=byId('dailyBreakdownStatus');status.textContent='内訳を読み込んでいます…';
- try{const b=await callServer('employeeDailyBalance',{idToken});if(serial!==dailyBreakdownRequest_||byId('dailyBreakdownPanel').hidden)return;validateDailyBalance_(b);dailySummary_=b;dailyBreakdownData_=b;
+ try{const b=await callServer('employeeDailyBalance',{idToken});if(serial!==dailyBreakdownRequest_||byId('dailyBreakdownPanel').hidden||dailyBalanceLoading_)return;validateDailyBalance_(b);dailySummary_=b;dailyBreakdownData_=b;
   const body=byId('dailyBreakdownBody');body.replaceChildren();const add=(label,value,color)=>appendDailyDetailLine_(body,label,dailyMoney_(value===0?0:value),color),a=b.approvedAllowances||{};
   if(!b.salaryTotals||!Number.isSafeInteger(b.salaryTotals.total)||!Number.isSafeInteger(b.salaryTotals.paid))throw new Error('給与累計を取得できませんでした。');
   add('給与額（累計・手当含む）',b.salaryTotals.total);add('支払い済み給与額',b.salaryTotals.paid);add('未払い給与額',b.wageRemaining);
@@ -294,8 +294,8 @@ function renderDailyAmountsLegacy_(){
  renderProvisionalPanel_('daily',dailySummary_&&dailySummary_.provisionalWork);renderDailyCompact_();
 }
 async function refreshDailyAmounts_(automatic){
- if(pending.daily||provisionalBusy_||dailyBalanceLoading_)return;if(dailyPayrollTimer_){clearTimeout(dailyPayrollTimer_);dailyPayrollTimer_=null;}if(automatic!==true)dailyPayrollPolls_=0;const serial=++dailySummarySerial_;dailyBalanceLoading_=true;dailySummary_=null;renderDailyAmounts_();byId('dailySummaryStatus').textContent='残高を確認しています…';
- try{const started=Date.now();const initial=!startupDailyConsumed_&&BOOTSTRAP.initialDailyBalance;startupDailyConsumed_=true;const result=initial?await Promise.resolve(initial):await callServer('employeeDailySummary',{idToken:idToken});if(serial!==dailySummarySerial_)return;validateDailyBalance_(result);if(result.serverNow)workClockOffset_=result.serverNow-(started+Date.now())/2;dailySummary_=result;byId('dailyDate').textContent=result.today.replace(/-/g,'/');if(result.pendingPayrollDates&&result.pendingPayrollDates.length){byId('dailySummaryStatus').textContent=dailyPayrollPolls_<12?'下番した勤務の日給を更新しています。自動で残高を再確認します。':'日給の更新に時間がかかっています。「残高を更新」で再確認してください。';if(dailyPayrollPolls_<12){dailyPayrollPolls_++;dailyPayrollTimer_=setTimeout(()=>{dailyPayrollTimer_=null;if(document.visibilityState!=='hidden')return refreshDailyAmounts_(true);},Math.min(30000,1000*2**Math.min(dailyPayrollPolls_,5))+Math.floor(Math.random()*1000));}}else{dailyPayrollPolls_=0;byId('dailySummaryStatus').textContent='残業代・手当等は、会社承認後に加算されます';}}
+ if(pending.daily||provisionalBusy_||dailyBalanceLoading_)return;if(dailyPayrollTimer_){clearTimeout(dailyPayrollTimer_);dailyPayrollTimer_=null;}if(automatic!==true)dailyPayrollPolls_=0;const serial=++dailySummarySerial_;dailyBreakdownRequest_++;dailyBalanceLoading_=true;dailySummary_=null;renderDailyAmounts_();byId('dailySummaryStatus').textContent='残高を確認しています…';
+ try{const started=Date.now();const initial=!startupDailyConsumed_&&BOOTSTRAP.initialDailyBalance&&Date.now()-Number(BOOTSTRAP.initialDailyBalance.serverNow||0)<15000?BOOTSTRAP.initialDailyBalance:null;startupDailyConsumed_=true;const result=initial?await Promise.resolve(initial):await callServer('employeeDailySummary',{idToken:idToken});if(serial!==dailySummarySerial_)return;validateDailyBalance_(result);if(result.serverNow)workClockOffset_=result.serverNow-(started+Date.now())/2;dailySummary_=result;byId('dailyDate').textContent=result.today.replace(/-/g,'/');if(result.pendingPayrollDates&&result.pendingPayrollDates.length){byId('dailySummaryStatus').textContent=dailyPayrollPolls_<12?'下番した勤務の日給を更新しています。自動で残高を再確認します。':'日給の更新に時間がかかっています。「残高を更新」で再確認してください。';if(dailyPayrollPolls_<12){dailyPayrollPolls_++;dailyPayrollTimer_=setTimeout(()=>{dailyPayrollTimer_=null;if(document.visibilityState!=='hidden')return refreshDailyAmounts_(true);},Math.min(30000,1000*2**Math.min(dailyPayrollPolls_,5))+Math.floor(Math.random()*1000));}}else{dailyPayrollPolls_=0;byId('dailySummaryStatus').textContent='残業代・手当等は、会社承認後に加算されます';}}
  catch(error){if(serial===dailySummarySerial_){dailySummary_=null;const updating=/最新の申請内容を反映しています|給与・交通費・経費の反映を確認中/.test(errorText(error,''));if(updating&&dailyPayrollPolls_<3){dailyPayrollPolls_++;byId('dailySummaryStatus').textContent='申請内容を反映しています…';dailyPayrollTimer_=setTimeout(()=>{dailyPayrollTimer_=null;if(document.visibilityState!=='hidden')refreshDailyAmounts_(true);},1000);}else{byId('dailySummaryStatus').textContent='残高を確認できませんでした。「残高を更新」で再確認してください。';showError(errorText(error,'残高を確認できませんでした。'));}}}
  finally{if(serial===dailySummarySerial_){dailyBalanceLoading_=false;renderDailyAmounts_();}}
 }
@@ -710,3 +710,8 @@ window.addEventListener('shishidogumi-recovered',async event=>{
  if(PAGE==='work')await refreshWorkReport_();if(PAGE==='daily')await refreshDailyAmounts_();if(PAGE==='shift')await refreshShiftState_(false);
  if(method==='registerStaffName')location.reload();
 });
+
+
+
+
+window.addEventListener('pageshow',event=>{if(event.persisted&&PAGE==='daily'&&idToken&&currentUser&&currentUser.registered&&!needsStaffRegistration()){startupDailyConsumed_=true;refreshDailyAmounts_();}});
