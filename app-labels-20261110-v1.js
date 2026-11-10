@@ -30,7 +30,7 @@ async function refreshDailyBreakdown_(){
   const r=b.reserve;if(r.loanTotal||r.loanRemaining||r.currentLoanPending){add('貸付総額',r.loanTotal||0);add('貸付の未返済残額',r.loanRemaining);add('今回の返済分',-r.currentLoanPending);}
   for(const s of b.salarySchedules||[])add(s.month+'月締め・'+s.payDate+'給与支払い分',s.amount);
   for(const x of b.allowanceRequests||[]){const lines=pendingAllowanceLines_(x);if(!lines.length)continue;const box=document.createElement('section');box.style.cssText='background:#fff8db;border:1px solid #ead783;border-radius:10px;padding:14px;margin:16px 0';const date=document.createElement('strong');date.textContent=x.date||'';box.append(date);for(const text of lines){const line=document.createElement('p');line.style.cssText='margin:8px 0 0;line-height:1.6;overflow-wrap:anywhere';line.textContent=text;box.append(line);}body.append(box);}
-  add('未払い残高（控除前）',b.grossAvailable);add('保険料・返済などの差引額',-(b.dailyReservedDeduction??b.reserve.deductionTotal));add('日払い可能額',b.available);
+  add('未払い残高',b.grossAvailable);add('保険料・返済などの差引額',-(b.dailyReservedDeduction??b.reserve.deductionTotal));add('日払い可能額',b.available);
   const month=byId('dailyHistoryMonth');month.max=b.today.slice(0,7);if(!month.value)month.value=month.max;status.textContent='最新の内訳を表示しています。';renderDailyAmounts_();
  }catch(e){if(serial===dailyBreakdownRequest_)status.textContent='内訳を取得できませんでした。「内訳を更新」で再確認できます。';}
 }
@@ -234,7 +234,7 @@ function installDailyBalanceGroups_(){
  deductions.querySelector('dl').appendChild(byId('dailySignedAvailable').parentElement);
  let progress=byId('dailyDeductionProgress');if(!progress){progress=document.createElement('section');progress.id='dailyDeductionProgress';deductions.appendChild(progress);}progress.hidden=true;
  progress.appendChild(byId('dailyInsuranceUnfunded').parentElement);progress.appendChild(byId('dailyInsuranceHint'));
- let reference=byId('dailyDeductionReference');if(!reference){reference=document.createElement('details');reference.id='dailyDeductionReference';reference.style.margin='12px 0';const summary=document.createElement('summary'),dl=document.createElement('dl');summary.textContent='貸付残高・控除履歴（参考）';dl.className='daily-balance-list';reference.append(summary,dl);totalList.before(reference);}
+ let reference=byId('dailyDeductionReference');if(!reference){reference=document.createElement('details');reference.id='dailyDeductionReference';reference.style.margin='12px 0';const summary=document.createElement('summary'),dl=document.createElement('dl');summary.textContent='貸付残高・保険料・返済の履歴（参考）';dl.className='daily-balance-list';reference.append(summary,dl);totalList.before(reference);}
  ['dailyInsuranceDue','dailyLoanDue','dailyCarry','dailyLoanRemaining','dailySettledDeduction'].forEach(id=>reference.querySelector('dl').appendChild(byId(id).parentElement));
  byId('dailyLoanDue').parentElement.querySelector('dt').textContent='貸付の返済（当月）';byId('dailyCarry').parentElement.querySelector('dt').textContent='前月からの繰越分';
  reference.hidden=!!dailySummary_&&!dailySummary_.reserve.loanRemaining&&!dailySummary_.reserve.settled&&!dailySummary_.reserve.carry&&!dailySummary_.reserve.currentLoanPending;
