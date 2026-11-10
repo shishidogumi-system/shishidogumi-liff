@@ -13,7 +13,7 @@
 <meta name="referrer" content="no-referrer">
 <link rel="preconnect" href="https://script.google.com">
 <link rel="preconnect" href="https://script.googleusercontent.com">
-<link rel="preload" href="./app-pending-yellow-20261110-v1.js?v=date-only-20261110" as="script">
+<link rel="preload" href="./app-pending-yellow-20261110-v1.js?v=out-only-20261110" as="script">
 <script defer src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
   <!-- LINE認証はGitHubの入口とGAS doPostで完了。GAS内では再初期化しません。 -->
@@ -385,15 +385,6 @@
     <label for="workShift">勤務区分</label>
     <select id="workShift"><option value="">選択してください</option><option value="日勤">日勤</option><option value="夜勤">夜勤</option></select>
     <label for="workSite">現場名（任意）</label><input id="workSite" maxlength="150" autocomplete="off">
-    <button type="button" class="button secondary" id="workAllowanceInToggle" aria-expanded="false" aria-controls="workAllowanceInPanel">手当を申請</button>
-    <div id="workAllowanceInPanel" hidden>
-      <label><input type="checkbox" id="workAllowanceInDriver" style="width:auto">運転手当（1,000円）</label>
-      <label><input type="checkbox" id="workAllowanceInQualified" style="width:auto">資格者 現場配置手当（2,000円）</label>
-      <label><input type="checkbox" id="workAllowanceInOther" style="width:auto">その他（500円）</label>
-      <label for="workAllowanceInNote">手当の備考（その他を選んだ場合は必須）</label>
-      <textarea id="workAllowanceInNote" maxlength="1000"></textarea>
-      <p>運転手当・その他手当は会社承認後に反映します。</p>
-    </div>
     <button type="button" class="button" id="workClockInButton" disabled>上番を報告する</button>
   </div>
   <div id="workClockOutPanel" hidden>
@@ -495,7 +486,7 @@ window.SHISHIDOGUMI_STARTUP_SHELL={shownAt:performance.now(),release(){form.iner
 })();
 </script>
 <script src="./recovery.js?v=daily-summary-20261110-v2" defer></script>
-<script src="./entry-pending-yellow-20261110-v1.js?v=date-only-20261110" defer></script>
+<script src="./entry-pending-yellow-20261110-v1.js?v=out-only-20261110" defer></script>
 
 </body>
 
