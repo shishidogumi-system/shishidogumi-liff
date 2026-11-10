@@ -1,3 +1,45 @@
+let dailyDetailsSerial_=0,dailyDetailsNext_=null,dailyDetailsVersion_='';
+function installDailyDetails_(){
+ if(byId('dailyDetailsButton'))return;
+ const button=document.createElement('button');button.id='dailyDetailsButton';button.type='button';button.className='daily-refresh';button.textContent='詳細を確認';button.setAttribute('aria-expanded','false');
+ const panel=document.createElement('section');panel.id='dailyDetailsPanel';panel.hidden=true;panel.style.cssText='border-top:1px solid #ccd8e4;margin-top:18px;padding-top:16px';
+ const heading=document.createElement('h3');heading.textContent='給与・申請・支払の詳細';
+ const label=document.createElement('label');label.htmlFor='dailyDetailsMonth';label.textContent='表示する月';const month=document.createElement('input');month.id='dailyDetailsMonth';month.type='month';
+ const update=document.createElement('button');update.type='button';update.textContent='この月を表示';update.id='dailyDetailsReload';update.onclick=()=>loadDailyDetails_(false);
+ const status=document.createElement('p');status.id='dailyDetailsStatus';status.setAttribute('role','status');
+ const list=document.createElement('div');list.id='dailyDetailsList';
+ const more=document.createElement('button');more.id='dailyDetailsMore';more.type='button';more.hidden=true;more.textContent='次の50件を表示';more.onclick=()=>loadDailyDetails_(true);
+ panel.append(heading,label,month,update,status,list,more);byId('dailyRefresh').after(button,panel);
+ button.onclick=()=>{panel.hidden=!panel.hidden;button.setAttribute('aria-expanded',String(!panel.hidden));button.textContent=panel.hidden?'詳細を確認':'詳細を閉じる';if(!panel.hidden){month.max=(dailySummary_?.today||'').slice(0,7);if(!month.value)month.value=month.max;loadDailyDetails_(false);}else{dailyDetailsSerial_++;}};
+ month.onchange=()=>{dailyDetailsSerial_++;dailyDetailsNext_=null;list.replaceChildren();more.hidden=true;status.textContent='「この月を表示」を押してください。';};
+}
+function dailyDetailLines_(r){
+ const yen=n=>Number(n||0).toLocaleString('ja-JP')+'円';
+ if(r.kind!=='勤務')return [r.route||'',r.kind==='交通費'?'申請額：'+yen(r.amount):yen(r.amount),r.status].filter(Boolean);
+ const lines=[r.shift+(r.completed?'／下番報告済み':'／上番中')];
+ if(r.cancelled)lines.push(r.status);else if(r.completed)lines.push(r.base===null?'給与：反映待ち':'給与：'+yen(r.base));
+ if(r.overtimeMinutes>0)lines.push('残業 '+r.overtimeMinutes+'分／'+(r.overtimeApproved?yen(r.overtimePay):'承認待ち'));
+ for(const [label,key] of [['運転手当','driver'],['その他手当','other']])if(r[key]>0)lines.push(label+' '+yen(r[key])+'／'+(r.allowanceStatus==='承認済み'?'承認済み':r.allowanceStatus==='削除済み'?'削除済み':'承認待ち'));
+ if(r.qualification>0)lines.push('資格者現場配置手当 '+yen(r.qualification));if(r.training>0)lines.push('研修手当 '+yen(r.training));return lines;
+}
+async function loadDailyDetails_(append){
+ const month=byId('dailyDetailsMonth').value,serial=++dailyDetailsSerial_,status=byId('dailyDetailsStatus'),list=byId('dailyDetailsList'),more=byId('dailyDetailsMore');
+ if(!/^20\d\d-(0[1-9]|1[0-2])$/.test(month)||month>(dailySummary_?.today||'').slice(0,7)){status.textContent='当月以前の月を選択してください。';return;}
+ if(!append){dailyDetailsNext_=null;list.replaceChildren();}else if(dailyDetailsNext_===null)return;
+ status.textContent='詳細を読み込んでいます…';more.hidden=true;
+ try{const r=await callServer('employeePayDetails',{idToken,month,offset:append?dailyDetailsNext_:0});if(serial!==dailyDetailsSerial_||byId('dailyDetailsPanel').hidden)return;
+  if(!r||r.month!==month||!Array.isArray(r.items))throw new Error('詳細の取得結果を確認できませんでした。');
+  r.items.forEach(item=>{const card=document.createElement('section');card.style.cssText='padding:12px 0;border-bottom:1px solid #d7dfe8';const h=document.createElement('h4');h.textContent=item.date+' '+item.kind;card.append(h);dailyDetailLines_(item).forEach(line=>{const p=document.createElement('p');p.textContent=line;p.style.margin='6px 0';if(line.startsWith('研修手当'))p.style.color='#1565c0';card.append(p);});list.append(card);});
+  dailyDetailsNext_=r.nextOffset;more.hidden=r.nextOffset===null;status.textContent=r.from+' ～ '+r.to+'／'+r.total+'件'+(r.total?'':'（この期間の記録はありません）')+'。勤務は上番日、支払履歴は支払日で表示します。';dailyDetailsVersion_=dailySummary_?.version||'';
+ }catch(e){if(serial===dailyDetailsSerial_){status.textContent='詳細を読み込めませんでした。「この月を表示」で再確認してください。';more.hidden=true;}}
+}
+function renderDailyCompact_(){
+ installDailyDetails_();
+ // Keep unpaid amounts and approval notices visible; cumulative history is in the detail panel.
+ for(const id of ['dailyLifetimeTotal','dailyReceivedTotal'])byId(id).parentElement.hidden=true;
+ if(dailySummary_&&dailyDetailsVersion_&&dailyDetailsVersion_!==dailySummary_.version){dailyDetailsSerial_++;dailyDetailsNext_=null;byId('dailyDetailsList').replaceChildren();byId('dailyDetailsMore').hidden=true;byId('dailyDetailsStatus').textContent='残高が更新されました。「この月を表示」で詳細を更新してください。';dailyDetailsVersion_='';}
+}
+
 let startupDailyConsumed_=false,startupWorkConsumed_=false;
 let provisionalBusy_=false,provisionalRefreshAt_=0;
 
@@ -224,7 +266,7 @@ function renderDailyAmounts_(){
  byId('dailyAmount').max=String(available);byId('dailyFullButton').textContent=pending.daily?'申請中…':dailySummary_?'全額で申請（'+dailyMoney_(available)+'）':'全額で申請';
  if(payrollPending)byId('dailyFullButton').textContent='日給を更新しています…';
  byId('dailyButton').textContent=pending.daily?'申請中…':'入力した金額で申請';
- renderProvisionalPanel_('daily',dailySummary_&&dailySummary_.provisionalWork);
+ renderProvisionalPanel_('daily',dailySummary_&&dailySummary_.provisionalWork);renderDailyCompact_();
 }
 async function refreshDailyAmounts_(automatic){
  if(pending.daily||provisionalBusy_||dailyBalanceLoading_)return;if(dailyPayrollTimer_){clearTimeout(dailyPayrollTimer_);dailyPayrollTimer_=null;}if(automatic!==true)dailyPayrollPolls_=0;const serial=++dailySummarySerial_;dailyBalanceLoading_=true;dailySummary_=null;renderDailyAmounts_();byId('dailySummaryStatus').textContent='残高を確認しています…';
@@ -642,3 +684,6 @@ window.addEventListener('shishidogumi-recovered',async event=>{
  if(PAGE==='work')await refreshWorkReport_();if(PAGE==='daily')await refreshDailyAmounts_();if(PAGE==='shift')await refreshShiftState_(false);
  if(method==='registerStaffName')location.reload();
 });
+
+
+
