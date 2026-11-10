@@ -22,7 +22,7 @@
 
 <style id="shiftCalendarLayout">#shiftForm .calendar-grid,#shiftForm .calendar-weekdays{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}#shiftForm .calendar-weekdays{text-align:center;font-size:18px;margin-top:12px}#shiftForm .calendar-grid{margin-top:4px}#shiftForm .calendar-blank{display:block}#shiftForm .calendar-weekday{display:none}#shiftForm .calendar-day{min-width:0}</style>
 <style>#reportQualifiedPlacement{width:26px!important;min-height:26px!important;height:26px;padding:0!important;vertical-align:middle}</style>
-</head>
+<style>#dailyBreakdownPanel{min-width:0;max-width:100%;overflow-wrap:anywhere}#dailyHistoryMonth{display:block;width:100%;max-width:100%;min-width:0;box-sizing:border-box;font-size:18px;padding:10px;margin:8px 0 12px}#dailyHistoryMonth::-webkit-date-and-time-value{text-align:left;min-width:0}#dailyBreakdownPanel button{max-width:100%;box-sizing:border-box;white-space:normal}</style></head>
 
 
 <body>
@@ -189,8 +189,8 @@
     <div id="dailyForm" class="hidden">
       <p class="daily-date-line">申請日 <span id="dailyDate"></span></p>
       <section class="daily-balance-card" aria-label="日払い残高">
- <dl class="daily-balance-list"><div><dt>残高</dt><dd id="dailyGrossCompact">—</dd></div><div class="daily-balance-total"><dt>未精算（日払い可能額）</dt><dd id="dailyAvailable">—</dd></div></dl>
- <p class="note">残高は支払い前の未受取額、日払い可能額は保険料・返済・給与日支払い分などを差し引いた金額です。</p>
+ <dl class="daily-balance-list"><div><dt>未払い残高（控除前）</dt><dd id="dailyGrossCompact">—</dd></div><div class="daily-balance-total"><dt>日払い可能額</dt><dd id="dailyAvailable">—</dd></div></dl>
+ <p class="note">未払い残高から保険料・返済・給与日支払い分などを差し引いた金額が、日払い可能額です。</p>
  <p id="dailySummaryStatus" class="note" role="status">残高を確認しています…</p><p id="dailyProcessingCompact" class="note"></p>
  <button type="button" id="dailyRefresh" class="daily-refresh" onclick="refreshDailyAmounts_()" disabled>残高を更新</button>
  <button type="button" id="dailyDetailsButton" class="daily-refresh" aria-expanded="false" onclick="toggleDailyBreakdown_()">詳細を確認</button>
@@ -514,7 +514,7 @@ window.SHISHIDOGUMI_STARTUP_SHELL={shownAt:performance.now(),release(){form.iner
 })();
 </script>
 <script src="./recovery.js?v=daily-summary-20261110-v2" defer></script>
-<script src="./entry-summary-20261110-v3.js" defer></script>
+<script src="./entry-labels-20261110-v1.js" defer></script>
 
 </body>
 
