@@ -705,6 +705,8 @@ function renderTrainingAndProcessing_(){
 // Reuse the authenticated application when moving to work; always read fresh work state.
 function openWorkWithoutReload_(event){
  if(event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey||applicationSaving_()||needsStaffRegistration()||!currentUser?.registered)return;
+ // On a new Japan calendar day, use normal navigation to refresh dates and LINE identity.
+ if(BOOTSTRAP.today!==workNowDate_())return;
  const link=event.target.closest?.('a[href]');if(!link)return;
  let url;try{url=new URL(link.href);}catch(e){return;}
  if(url.origin!=='https://liff.line.me'||url.pathname!=='/2011785712-iKJrxFMX'||!Object.prototype.hasOwnProperty.call(forms,url.searchParams.get('page')))return;
