@@ -63,6 +63,7 @@ let receiptPreviewUrl = null;
 
 function byId(id) { return document.getElementById(id); }
 function showError(text,field) {
+  if(PAGE==='transport'&&String(text)==='現場中止日の交通費は会社が精算します。会社へご確認ください。'){byId('error').textContent='';byId('error').style.display='none';nearError_('この利用日の交通費は申請対象外です。','transportDate');return;}
   nearError_(String(text||'処理を完了できませんでした。'),field);
   byId('error').textContent = String(text || '処理を完了できませんでした。');
   byId('error').style.display = 'block';
