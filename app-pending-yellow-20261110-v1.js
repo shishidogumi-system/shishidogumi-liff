@@ -85,8 +85,26 @@ let previewUrls = [];
 let receiptPreviewUrl = null;
 
 function byId(id) { return document.getElementById(id); }
+let registrationGrant_='';
+function showRegistrationPin_(){
+ document.querySelector('nav[aria-label="申請メニュー"]')?.style.setProperty('display','none');
+ byId('nameRegistration').classList.add('hidden');byId('pageTitle').textContent='初回登録';byId('userInfo').textContent='会社から案内された暗証番号を入力してください。';
+ let panel=byId('registrationPinPanel');if(panel){panel.hidden=false;return;}
+ panel=document.createElement('form');panel.id='registrationPinPanel';
+ const label=document.createElement('label');label.className='label';label.htmlFor='registrationPin';label.textContent='暗証番号（数字4桁）';
+ const input=document.createElement('input');input.id='registrationPin';input.type='password';input.inputMode='numeric';input.pattern='[0-9]{4}';input.maxLength=4;input.minLength=4;input.required=true;input.autocomplete='off';
+ const button=document.createElement('button');button.type='submit';button.className='button';button.textContent='確認して登録へ進む';
+ const status=document.createElement('p');status.setAttribute('role','status');panel.append(label,input,button,status);byId('nameRegistration').before(panel);
+ panel.onsubmit=async event=>{event.preventDefault();if(button.disabled)return;button.disabled=true;status.textContent='確認しています…';const pin=input.value;input.value='';try{
+  const r=await new Promise((ok,no)=>google.script.run.withSuccessHandler(ok).withFailureHandler(no).verifyRegistrationPin({idToken,pin}));
+  if(r.registered){location.reload();return;}if(!r.grant)throw Error('暗証番号を確認してください。');registrationGrant_=r.grant;panel.hidden=true;byId('nameRegistration').classList.remove('hidden');byId('pageTitle').textContent='初回氏名登録';byId('userInfo').textContent='氏名と警備員区分を登録してください。';status.textContent='';
+ }catch(e){status.textContent=errorText(e,'暗証番号を確認できませんでした。');}finally{button.disabled=false;}};
+}
+
+
 function showError(text,field) {
-  if(PAGE==='transport'&&String(text)==='現場中止日の交通費は会社が精算します。会社へご確認ください。'){byId('error').textContent='';byId('error').style.display='none';nearError_('この利用日の交通費は申請対象外です。','transportDate');return;}
+  if(String(text)==='このアカウントは現在利用できません。'){Object.values(forms).forEach(id=>byId(id)?.classList.add('hidden'));byId('nameRegistration')?.classList.add('hidden');if(byId('registrationPinPanel'))byId('registrationPinPanel').hidden=true;byId('pageTitle').textContent='利用停止';document.querySelector('nav[aria-label="申請メニュー"]')?.style.setProperty('display','none');byId('userInfo').textContent='';byId('error').textContent='現在、利用が停止されています。会社へご連絡ください。';byId('error').style.display='block';byId('pageTitle').after(byId('error'));return;}
+
   nearError_(String(text||'処理を完了できませんでした。'),field);
   byId('error').textContent = String(text || '処理を完了できませんでした。');
   byId('error').style.display = 'block';
@@ -475,6 +493,7 @@ async function sendExpense_() {
 let expenseRequestId = null;
 let registeringName = false;
 function showRegisteredApplication() {
+ document.querySelector('nav[aria-label="申請メニュー"]')?.style.setProperty('display','flex');
   requireAuthentication();applyQualificationVisibility_();
   byId('nameRegistration').classList.add('hidden');
   Object.keys(forms).forEach(function(key) { if(!byId(forms[key]))return;byId(forms[key]).classList.toggle('hidden', key !== PAGE); });
@@ -570,6 +589,7 @@ function initializeApplication() {
       if (currentUser.registered) byId('realName').value = currentUser.name;
       byId('pageTitle').textContent = '初回氏名登録';
       byId('userInfo').textContent = '初回だけ、氏名と警備員区分を登録してください。';
+      showRegistrationPin_();
     } else {
       showRegisteredApplication();
     }
