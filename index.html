@@ -13,7 +13,7 @@
 <meta name="referrer" content="no-referrer">
 <link rel="preconnect" href="https://script.google.com">
 <link rel="preconnect" href="https://script.googleusercontent.com">
-<link rel="preload" href="./app-postwork-fast-20261112.js?v=4" as="script">
+<link rel="preload" href="./app-shift-day-notes-20261112.js" as="script">
 <script defer src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
   <!-- LINE認証はGitHubの入口とGAS doPostで完了。GAS内では再初期化しません。 -->
@@ -369,9 +369,9 @@
  <div class="input-area"><h2 class="label">希望日を選択（1〜15日）</h2><p class="note">未来の日や、離れた日も選べます。選択中の日をもう一度押すと解除します。</p>
  <div class="calendar-toolbar"><button type="button" class="calendar-nav" aria-label="前の月" onclick="moveShiftMonth_(-1)">前月</button><h2 id="shiftMonthTitle"></h2><button type="button" class="calendar-nav" aria-label="次の月" onclick="moveShiftMonth_(1)">次月</button></div>
  <div class="calendar-weekdays" aria-hidden="true"><span>日</span><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span>土</span></div><div id="shiftCalendar" class="calendar-grid" aria-label="希望日のカレンダー"></div><p id="shiftCount" class="selection-count" aria-live="polite">選択中：0／15日</p></div>
- <details id="shiftSubmittedDetails" style="margin:16px 0;padding:14px;border:1px solid #bbb;border-radius:10px"><summary style="font-weight:bold;cursor:pointer">シフト内容を確認</summary><p id="shiftSubmittedMonth" class="note"></p><ul id="shiftSubmittedList" style="padding-left:20px;overflow-wrap:anywhere"></ul><p class="note">月を切り替えると、その月のシフト内容を確認できます。変更時は直接宍戸組営業LINEへご相談ください。</p></details><div class="input-area"><h2 class="label">全選択日にまとめて設定</h2><div class="choice-buttons"><button type="button" class="choice-button" onclick="setAllShiftChoices_('日勤')">日勤</button><button type="button" class="choice-button" onclick="setAllShiftChoices_('夜勤')">夜勤</button><button type="button" class="choice-button" onclick="setAllShiftChoices_('どちらでも')">どちらでも</button></div><p id="shiftBulkStatus" class="note" aria-live="polite">その後、日ごとの変更もできます。</p></div>
+ <details id="shiftSubmittedDetails" style="margin:16px 0;padding:14px;border:1px solid #bbb;border-radius:10px"><summary style="font-weight:bold;cursor:pointer">シフト内容を確認</summary><p id="shiftSubmittedMonth" class="note"></p><ul id="shiftSubmittedList" style="padding-left:20px;overflow-wrap:anywhere"></ul><p class="note">月を切り替えると、その月のシフト内容を確認できます。変更時は直接宍戸組営業LINEへご相談ください。</p></details><div class="input-area"><h2 class="label">全選択日にまとめて設定</h2><div class="choice-buttons"><button type="button" class="choice-button" onclick="setAllShiftChoices_('日勤')">日勤</button><button type="button" class="choice-button" onclick="setAllShiftChoices_('夜勤')">夜勤</button></div><p id="shiftBulkStatus" class="note" aria-live="polite">その後、日ごとの変更もできます。</p></div>
  <div id="shiftSelected" aria-label="選択日と希望勤務の一覧"></div>
- <div class="input-area"><label class="label" for="shiftNote">希望内容（100文字まで・全日に共通）</label><textarea id="shiftNote" maxlength="100" placeholder="希望があれば入力してください"></textarea><p class="note">給与や実際の勤務実績は、この申請から作りません。</p></div>
+ 
  <button type="button" class="button" id="shiftButton" onclick="submitShift()" disabled>内容を確認して提出</button>
  </div>
 <style>#workForm{font-size:20px;line-height:1.6}#workForm label{display:block;font-weight:bold;margin:16px 0 8px}#workForm .button{margin:12px 0}#workForm h2{font-size:24px}#workForm h3{font-size:21px}#workReportHistory p{border-top:1px solid #ddd;padding:12px 0;white-space:pre-line}</style>
@@ -486,7 +486,7 @@ window.SHISHIDOGUMI_STARTUP_SHELL={shownAt:performance.now(),release(){form.iner
 })();
 </script>
 <script src="./recovery.js?v=daily-summary-20261110-v2" defer></script>
-<script src="./entry-postwork-fast-20261112.js?v=4" defer></script>
+<script src="./entry-shift-day-notes-20261112.js" defer></script>
 
 </body>
 
