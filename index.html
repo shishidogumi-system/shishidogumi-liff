@@ -13,7 +13,7 @@
 <meta name="referrer" content="no-referrer">
 <link rel="preconnect" href="https://script.google.com">
 <link rel="preconnect" href="https://script.googleusercontent.com">
-<link rel="preload" href="./app-postwork-fast-20261112.js?v=3" as="script">
+<link rel="preload" href="./app-postwork-fast-20261112.js?v=4" as="script">
 <script defer src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
   <!-- LINE認証はGitHubの入口とGAS doPostで完了。GAS内では再初期化しません。 -->
@@ -39,7 +39,7 @@
 
   <div
     class="user-info"
-    id="userInfo">
+    id="userInfo" style="display:none">
     LINEユーザー情報を確認しています…
   </div>
 
@@ -383,7 +383,7 @@
   <button type="button" class="button secondary" id="workRefreshButton">勤務情報を更新</button>
   <div id="workClockInPanel">
     <label for="workShift">勤務区分</label>
-    <select id="workShift" hidden><option value="">選択してください</option><option value="日勤">日勤</option><option value="夜勤">夜勤</option></select><div id="workShiftChoices" class="work-shift-choices" role="group" aria-label="勤務区分を選択"><button type="button" data-shift="日勤" aria-pressed="false" disabled>日勤</button><button type="button" data-shift="夜勤" aria-pressed="false" disabled>夜勤</button></div><p id="workShiftSelected" aria-live="polite">日勤・夜勤を選んでください</p>
+    <input id="workShift" type="hidden" value=""><div id="workShiftChoices" class="work-shift-choices" role="group" aria-label="勤務区分を選択"><button type="button" data-shift="日勤" aria-pressed="false" disabled>日勤</button><button type="button" data-shift="夜勤" aria-pressed="false" disabled>夜勤</button></div><p id="workShiftSelected" aria-live="polite">日勤・夜勤を選んでください</p>
     <label for="workSite">現場名（任意）</label><input id="workSite" maxlength="150" autocomplete="off">
     <button type="button" class="button" id="workClockInButton" disabled>上番を報告する</button>
   </div>
@@ -486,7 +486,7 @@ window.SHISHIDOGUMI_STARTUP_SHELL={shownAt:performance.now(),release(){form.iner
 })();
 </script>
 <script src="./recovery.js?v=daily-summary-20261110-v2" defer></script>
-<script src="./entry-postwork-fast-20261112.js?v=3" defer></script>
+<script src="./entry-postwork-fast-20261112.js?v=4" defer></script>
 
 </body>
 
