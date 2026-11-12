@@ -26,7 +26,8 @@ async function refreshDailyBreakdown_(){
  try{const b=await callServer('employeeDailyBalance',{idToken});if(serial!==dailyBreakdownRequest_||byId('dailyBreakdownPanel').hidden||dailyBalanceLoading_)return;validateDailyBalance_(b);dailySummary_=b;dailyBreakdownData_=b;
   const body=byId('dailyBreakdownBody');body.replaceChildren();const add=(label,value,color)=>appendDailyDetailLine_(body,label,dailyMoney_(value===0?0:value),color),a=b.approvedAllowances||{};
   if(!b.salaryTotals||!Number.isSafeInteger(b.salaryTotals.total)||!Number.isSafeInteger(b.salaryTotals.paid))throw new Error('給与累計を取得できませんでした。');
-  add('給与額（累計・手当含む）',b.salaryTotals.total);add('支払い済み給与額',b.salaryTotals.paid);add('未払い給与額',b.wageRemaining);
+  const fullyAllocated=b.grossAvailable>0&&b.grossAvailable<=(b.dailyReservedDeduction??b.reserve.deductionTotal);
+  add('給与額（累計・手当含む）',b.salaryTotals.total);add('支払い済み給与額',b.salaryTotals.paid);if(!fullyAllocated)add('未払い給与額',b.wageRemaining);
   const note=document.createElement('p');note.className='note';note.textContent='給与額は現在までに反映された給与の累計です。以下の手当は内訳で、未承認分は含みません。';body.append(note);add('交通費',b.dailyTransportRemaining??b.transportRemaining);if(b.expenseRemaining)add('経費・立替金',b.dailyExpenseRemaining??b.expenseRemaining);
   for(const [key,label] of [['driver','運転手当'],['qualification','資格者現場配置手当'],['other','その他手当'],['training','研修手当']])if(a[key])add(label,a[key],key==='training'?'#1565c0':null);
   const insurance=insuranceDisplay_(b);add('社会保険料',insurance.fixed);add('充当済み',insurance.applied);add('充当残額',-insurance.totalUnfunded,insurance.totalUnfunded?'#c00000':null);
@@ -34,7 +35,7 @@ async function refreshDailyBreakdown_(){
   const r=b.reserve;if(r.loanTotal||r.loanRemaining||r.currentLoanPending){add('貸付総額',r.loanTotal||0);add('貸付の未返済残額',r.loanRemaining);add('今回の返済分',-r.currentLoanPending);}
   for(const s of b.salarySchedules||[])add(s.month+'月締め・'+s.payDate+'給与支払い分',s.amount);
 
-  add('未払い残高',b.grossAvailable);add('保険料・返済などの差引額',-(b.dailyReservedDeduction??b.reserve.deductionTotal));add('日払い可能額',b.available);if(b.pendingDaily)add('日払い申請中金額',b.pendingDaily,'#1565c0');
+  if(!fullyAllocated)add('未払い残高',b.grossAvailable);add('保険料・返済などの差引額',-(b.dailyReservedDeduction??b.reserve.deductionTotal));add('日払い可能額',b.available);if(b.pendingDaily)add('日払い申請中金額',b.pendingDaily,'#1565c0');
   const month=byId('dailyHistoryMonth');month.max=b.today.slice(0,7);if(!month.value)month.value=month.max;status.textContent='最新の内訳を表示しています。';renderDailyAmounts_();
  }catch(e){if(serial===dailyBreakdownRequest_)status.textContent='内訳を取得できませんでした。「内訳を更新」で再確認できます。';}
 }
