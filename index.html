@@ -13,7 +13,7 @@
 <meta name="referrer" content="no-referrer">
 <link rel="preconnect" href="https://script.google.com">
 <link rel="preconnect" href="https://script.googleusercontent.com">
-<link rel="preload" href="./app-shift-day-notes-20261112.js" as="script">
+<link rel="preload" href="./app-company-notices-20261112.js" as="script">
 <script defer src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
   <!-- LINE認証はGitHubの入口とGAS doPostで完了。GAS内では再初期化しません。 -->
@@ -78,7 +78,13 @@
       <a target="_top" href="https://liff.line.me/2011785712-iKJrxFMX?page=report">日報</a>
       <a target="_top" href="https://liff.line.me/2011785712-iKJrxFMX?page=shift">シフト申請</a>
       <a target="_top" href="https://liff.line.me/2011785712-iKJrxFMX?page=work&amp;v=auto-base-20261022-v1">勤務報告</a>
+    <button id="companyNoticeButton" type="button" aria-haspopup="dialog" style="color:#123c58;background:#fff;border:2px solid #123c58;border-radius:10px;padding:10px 15px;font:inherit;font-weight:bold">お知らせ</button>
     </nav>
+    <dialog id="companyNoticeDialog" aria-labelledby="companyNoticeTitle" style="width:min(640px,90vw);max-height:80vh;box-sizing:border-box;border:1px solid #9baebf;border-radius:12px;padding:18px">
+      <header style="display:flex;align-items:center;justify-content:space-between;gap:12px"><h2 id="companyNoticeTitle">経理・会社からのお知らせ</h2><button id="companyNoticeClose" type="button">閉じる</button></header>
+      <p id="companyNoticeStatus" role="status"></p>
+      <div id="companyNoticeHistory"></div>
+    </dialog>
     <!-- =========================
          A 交通費
     ========================= -->
@@ -486,7 +492,7 @@ window.SHISHIDOGUMI_STARTUP_SHELL={shownAt:performance.now(),release(){form.iner
 })();
 </script>
 <script src="./recovery.js?v=daily-summary-20261110-v2" defer></script>
-<script src="./entry-shift-day-notes-20261112.js" defer></script>
+<script src="./entry-company-notices-20261112.js" defer></script>
 
 </body>
 
