@@ -757,9 +757,11 @@ function setupWorkShiftChoice_(){
   const group=document.createElement('div');group.id='workShiftChoices';group.className='work-shift-choices';group.setAttribute('role','group');group.setAttribute('aria-label','勤務区分を選択');
   for(const shift of ['日勤','夜勤']){const b=document.createElement('button');b.type='button';b.dataset.shift=shift;b.onclick=()=>{if(workReportBusy_||provisionalBusy_)return;select.value=shift;setupWorkShiftChoice_();};group.append(b);}select.hidden=true;select.after(group);
   const selected=document.createElement('p');selected.id='workShiftSelected';selected.setAttribute('aria-live','polite');group.after(selected);
+ }
+ if(!byId('workShiftChangeButton')){
   const edit=document.createElement('button');edit.id='workShiftChangeButton';edit.type='button';edit.className='button secondary';edit.textContent='日勤・夜勤を訂正';edit.onclick=changeEmployeeWorkShift_;byId('workActiveInfo').after(edit);
  }
- for(const b of byId('workShiftChoices').querySelectorAll('button')){const on=select.value===b.dataset.shift;b.setAttribute('aria-pressed',String(on));b.textContent=(on?'✓ ':'')+b.dataset.shift;b.disabled=workReportBusy_||provisionalBusy_;}
+ for(const b of byId('workShiftChoices').querySelectorAll('button')){b.onclick=()=>{if(!workStateReady_||workReportBusy_||provisionalBusy_)return;select.value=b.dataset.shift;setupWorkShiftChoice_();};const on=select.value===b.dataset.shift;b.setAttribute('aria-pressed',String(on));b.textContent=(on?'✓ ':'')+b.dataset.shift;b.disabled=!workStateReady_||workReportBusy_||provisionalBusy_;}
  byId('workShiftSelected').textContent=select.value?'選択中：'+select.value:'日勤・夜勤を選んでください';
  const active=workReportState_.active;byId('workShiftChangeButton').hidden=!active;byId('workShiftChangeButton').disabled=workReportBusy_||provisionalBusy_||!!(active&&active.provisional&&active.provisional.reportedAt);
 }
