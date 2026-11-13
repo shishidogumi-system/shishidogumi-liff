@@ -13,7 +13,7 @@
 <meta name="referrer" content="no-referrer">
 <link rel="preconnect" href="https://script.google.com">
 <link rel="preconnect" href="https://script.googleusercontent.com">
-<link rel="preload" href="./app-shift-color-text-20261113.js" as="script">
+<link rel="preload" href="./app-shift-rest-20261113.js" as="script">
 <script defer src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
   <!-- LINE認証はGitHubの入口とGAS doPostで完了。GAS内では再初期化しません。 -->
@@ -22,7 +22,8 @@
 
 <style id="shiftCalendarLayout">#shiftForm .calendar-grid,#shiftForm .calendar-weekdays{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}#shiftForm .calendar-weekdays{text-align:center;font-size:18px;margin-top:12px}#shiftForm .calendar-grid{margin-top:4px}#shiftForm .calendar-blank{display:block}#shiftForm .calendar-weekday{display:none}#shiftForm .calendar-day{min-width:0}</style>
 <style>#reportQualifiedPlacement{width:26px!important;min-height:26px!important;height:26px;padding:0!important;vertical-align:middle}</style>
-<style>#dailyBreakdownPanel{min-width:0;max-width:100%;overflow-wrap:anywhere}#dailyHistoryMonth{display:block;width:100%;max-width:100%;min-width:0;box-sizing:border-box;font-size:18px;padding:10px;margin:8px 0 12px}#dailyHistoryMonth::-webkit-date-and-time-value{text-align:left;min-width:0}#dailyBreakdownPanel button{max-width:100%;box-sizing:border-box;white-space:normal}</style><style id="dailyMonthCompact">#dailyForm #dailyHistoryMonth{display:block;box-sizing:border-box!important;width:220px!important;max-width:100%!important;min-width:0!important;height:48px!important;min-height:48px!important;padding:8px 10px!important;margin:8px 0 14px;font-size:18px!important;line-height:1.4;border:1px solid #8899a8!important;border-radius:8px!important;appearance:none;-webkit-appearance:none}#dailyHistoryMonth::-webkit-date-and-time-value{min-width:0;text-align:left}</style><style>.work-shift-choices{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0 20px}.work-shift-choices button{min-height:88px;padding:16px 8px;border:3px solid #80909c;border-radius:12px;font-size:30px;font-weight:800;color:#142b3c;background:#dff3ff}.work-shift-choices button[data-shift="夜勤"]{background:#fff3bc}.work-shift-choices button[aria-pressed="true"]{border:5px solid #124e78;box-shadow:0 0 0 2px #fff inset}.work-shift-choices button:focus-visible{outline:3px solid #111;outline-offset:3px}#workShiftSelected{font-size:22px;font-weight:bold}</style></head>
+<style>#dailyBreakdownPanel{min-width:0;max-width:100%;overflow-wrap:anywhere}#dailyHistoryMonth{display:block;width:100%;max-width:100%;min-width:0;box-sizing:border-box;font-size:18px;padding:10px;margin:8px 0 12px}#dailyHistoryMonth::-webkit-date-and-time-value{text-align:left;min-width:0}#dailyBreakdownPanel button{max-width:100%;box-sizing:border-box;white-space:normal}</style><style id="dailyMonthCompact">#dailyForm #dailyHistoryMonth{display:block;box-sizing:border-box!important;width:220px!important;max-width:100%!important;min-width:0!important;height:48px!important;min-height:48px!important;padding:8px 10px!important;margin:8px 0 14px;font-size:18px!important;line-height:1.4;border:1px solid #8899a8!important;border-radius:8px!important;appearance:none;-webkit-appearance:none}#dailyHistoryMonth::-webkit-date-and-time-value{min-width:0;text-align:left}</style><style>.work-shift-choices{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0 20px}.work-shift-choices button{min-height:88px;padding:16px 8px;border:3px solid #80909c;border-radius:12px;font-size:30px;font-weight:800;color:#142b3c;background:#dff3ff}.work-shift-choices button[data-shift="夜勤"]{background:#fff3bc}.work-shift-choices button[aria-pressed="true"]{border:5px solid #124e78;box-shadow:0 0 0 2px #fff inset}.work-shift-choices button:focus-visible{outline:3px solid #111;outline-offset:3px}#workShiftSelected{font-size:22px;font-weight:bold}</style><style>.choice-button[data-value="休"][aria-pressed="true"]{background:#F1F3F5;color:#545C66}</style>
+</head>
 
 
 <body>
@@ -375,7 +376,7 @@
  <div class="input-area"><h2 class="label">希望日を選択（1〜15日）</h2><p class="note">未来の日や、離れた日も選べます。選択中の日をもう一度押すと解除します。</p>
  <div class="calendar-toolbar"><button type="button" class="calendar-nav" aria-label="前の月" onclick="moveShiftMonth_(-1)">前月</button><h2 id="shiftMonthTitle"></h2><button type="button" class="calendar-nav" aria-label="次の月" onclick="moveShiftMonth_(1)">次月</button></div>
  <div class="calendar-weekdays" aria-hidden="true"><span>日</span><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span>土</span></div><div id="shiftCalendar" class="calendar-grid" aria-label="希望日のカレンダー"></div><p id="shiftCount" class="selection-count" aria-live="polite">選択中：0／15日</p></div>
- <details id="shiftSubmittedDetails" style="margin:16px 0;padding:14px;border:1px solid #bbb;border-radius:10px"><summary style="font-weight:bold;cursor:pointer">シフト内容を確認</summary><p id="shiftSubmittedMonth" class="note"></p><ul id="shiftSubmittedList" style="padding-left:20px;overflow-wrap:anywhere"></ul><p class="note">月を切り替えると、その月のシフト内容を確認できます。変更時は直接宍戸組営業LINEへご相談ください。</p></details><div class="input-area"><h2 class="label">全選択日にまとめて設定</h2><div class="choice-buttons"><button type="button" class="choice-button" onclick="setAllShiftChoices_('日勤')">日勤</button><button type="button" class="choice-button" onclick="setAllShiftChoices_('夜勤')">夜勤</button></div><p id="shiftBulkStatus" class="note" aria-live="polite">その後、日ごとの変更もできます。</p></div>
+ <details id="shiftSubmittedDetails" style="margin:16px 0;padding:14px;border:1px solid #bbb;border-radius:10px"><summary style="font-weight:bold;cursor:pointer">シフト内容を確認</summary><p id="shiftSubmittedMonth" class="note"></p><ul id="shiftSubmittedList" style="padding-left:20px;overflow-wrap:anywhere"></ul><p class="note">月を切り替えると、その月のシフト内容を確認できます。変更時は直接宍戸組営業LINEへご相談ください。</p></details><div class="input-area"><h2 class="label">全選択日にまとめて設定</h2><div class="choice-buttons"><button type="button" class="choice-button" onclick="setAllShiftChoices_('日勤')">日勤</button><button type="button" class="choice-button" onclick="setAllShiftChoices_('夜勤')">夜勤</button><button type="button" class="choice-button" onclick="setAllShiftChoices_('休')">休</button></div><p id="shiftBulkStatus" class="note" aria-live="polite">その後、日ごとの変更もできます。</p></div>
  <div id="shiftSelected" aria-label="選択日と希望勤務の一覧"></div>
  
  <button type="button" class="button" id="shiftButton" onclick="submitShift()" disabled>内容を確認して提出</button>
@@ -492,7 +493,7 @@ window.SHISHIDOGUMI_STARTUP_SHELL={shownAt:performance.now(),release(){form.iner
 })();
 </script>
 <script src="./recovery.js?v=daily-summary-20261110-v2" defer></script>
-<script src="./entry-shift-color-text-20261113.js" defer></script>
+<script src="./entry-shift-rest-20261113.js" defer></script>
 
 </body>
 
