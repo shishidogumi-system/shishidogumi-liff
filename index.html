@@ -13,7 +13,7 @@
 <meta name="referrer" content="no-referrer">
 <link rel="preconnect" href="https://script.google.com">
 <link rel="preconnect" href="https://script.googleusercontent.com">
-<link rel="preload" href="./app-report-photo-choice-20261113.js" as="script">
+<link rel="preload" href="./app-report-empty-20261113.js" as="script">
 <script defer src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
   <!-- LINE認証はGitHubの入口とGAS doPostで完了。GAS内では再初期化しません。 -->
@@ -235,8 +235,8 @@
 <div class="input-area"><label class="label" for="reportShift">勤務区分</label><select id="reportShift"><option value="">選択してください</option><option>日勤</option><option>夜勤</option></select></div>
 <div class="input-area"><label class="label" for="reportQualifiedPlacement"><input id="reportQualifiedPlacement" type="checkbox" onchange="toggleReportQualified_()"> 交通誘導警備員資格者配置</label><div id="reportQualifiedFields" hidden><label class="label" for="reportCountA">資格者配置の人数（警備員A・名）</label><input id="reportCountA" type="number" min="0" max="999" step="1" inputmode="numeric" disabled><label class="label" for="reportQualifiedNames">資格者配置の氏名（1名ずつ改行）</label><textarea id="reportQualifiedNames" maxlength="40000" placeholder="田中 太郎&#10;佐藤 次郎" disabled></textarea><p class="note">人数と氏名の数を一致させてください。資格を持っていても一般配置での勤務は警備員Bです。</p></div></div>
 <div class="input-area"><label class="label" for="reportCountB">警備員B（一般配置で勤務・名）</label><input id="reportCountB" type="number" min="0" max="999" step="1" inputmode="numeric"><p class="note">資格保有者でも資格者配置でない勤務はBに入力します。同じ人をA・B両方に含めないでください。</p><p id="reportTotal"></p></div>
-<div class="input-area"><label class="label" for="reportSiteCars">現場側が用意した規制車 使用台数（台）</label><input id="reportSiteCars" type="number" min="0" max="999" step="1" inputmode="numeric" value="0"><label class="label" for="reportSiteDrivers">現場側の規制車 運転人数（名）</label><input id="reportSiteDrivers" type="number" min="0" max="999" step="1" inputmode="numeric" value="0"></div>
-<div class="input-area"><label class="label" for="reportOwnCars">宍戸組所有の規制車 使用台数（台）</label><input id="reportOwnCars" type="number" min="0" max="999" step="1" inputmode="numeric" value="0"><label class="label" for="reportOwnDrivers">宍戸組所有の規制車 運転人数（名）</label><input id="reportOwnDrivers" type="number" min="0" max="999" step="1" inputmode="numeric" value="0"><p class="note">運転人数は警備員A・Bの人数に追加されません。使用なし・運転なしは0を入力してください。</p></div>
+<div class="input-area"><label class="label" for="reportSiteCars">現場側が用意した規制車 使用台数（台）</label><input id="reportSiteCars" type="number" min="0" max="999" step="1" inputmode="numeric"><label class="label" for="reportSiteDrivers">現場側の規制車 運転人数（名）</label><input id="reportSiteDrivers" type="number" min="0" max="999" step="1" inputmode="numeric"></div>
+<div class="input-area"><label class="label" for="reportOwnCars">宍戸組所有の規制車 使用台数（台）</label><input id="reportOwnCars" type="number" min="0" max="999" step="1" inputmode="numeric"><label class="label" for="reportOwnDrivers">宍戸組所有の規制車 運転人数（名）</label><input id="reportOwnDrivers" type="number" min="0" max="999" step="1" inputmode="numeric"><p class="note">運転人数は警備員A・Bの人数に追加されません。使用・運転がなければ空欄で提出できます。</p></div>
       <div class="input-area">
 
         <label
@@ -509,7 +509,7 @@ window.SHISHIDOGUMI_STARTUP_SHELL={shownAt:performance.now(),release(){form.iner
 })();
 </script>
 <script src="./recovery.js?v=daily-summary-20261110-v2" defer></script>
-<script src="./entry-report-photo-choice-20261113.js" defer></script>
+<script src="./entry-report-empty-20261113.js" defer></script>
 
 </body>
 
