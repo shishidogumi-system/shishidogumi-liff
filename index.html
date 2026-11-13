@@ -23,6 +23,24 @@
 <style id="shiftCalendarLayout">#shiftForm .calendar-grid,#shiftForm .calendar-weekdays{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}#shiftForm .calendar-weekdays{text-align:center;font-size:18px;margin-top:12px}#shiftForm .calendar-grid{margin-top:4px}#shiftForm .calendar-blank{display:block}#shiftForm .calendar-weekday{display:none}#shiftForm .calendar-day{min-width:0}</style>
 <style>#reportQualifiedPlacement{width:26px!important;min-height:26px!important;height:26px;padding:0!important;vertical-align:middle}</style>
 <style>#dailyBreakdownPanel{min-width:0;max-width:100%;overflow-wrap:anywhere}#dailyHistoryMonth{display:block;width:100%;max-width:100%;min-width:0;box-sizing:border-box;font-size:18px;padding:10px;margin:8px 0 12px}#dailyHistoryMonth::-webkit-date-and-time-value{text-align:left;min-width:0}#dailyBreakdownPanel button{max-width:100%;box-sizing:border-box;white-space:normal}</style><style id="dailyMonthCompact">#dailyForm #dailyHistoryMonth{display:block;box-sizing:border-box!important;width:220px!important;max-width:100%!important;min-width:0!important;height:48px!important;min-height:48px!important;padding:8px 10px!important;margin:8px 0 14px;font-size:18px!important;line-height:1.4;border:1px solid #8899a8!important;border-radius:8px!important;appearance:none;-webkit-appearance:none}#dailyHistoryMonth::-webkit-date-and-time-value{min-width:0;text-align:left}</style><style>.work-shift-choices{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0 20px}.work-shift-choices button{min-height:88px;padding:16px 8px;border:3px solid #80909c;border-radius:12px;font-size:30px;font-weight:800;color:#142b3c;background:#dff3ff}.work-shift-choices button[data-shift="夜勤"]{background:#fff3bc}.work-shift-choices button[aria-pressed="true"]{border:5px solid #124e78;box-shadow:0 0 0 2px #fff inset}.work-shift-choices button:focus-visible{outline:3px solid #111;outline-offset:3px}#workShiftSelected{font-size:22px;font-weight:bold}</style><style>.choice-button[data-value="休"][aria-pressed="true"]{background:#F1F3F5;color:#545C66}</style>
+<style id="reportPhotoButtonLayout">
+#choiceInput-reportPhotos {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+#choiceInput-reportPhotos > button {
+  position: static;
+  width: 100%;
+  min-width: 0;
+  height: auto;
+  margin: 0;
+  box-sizing: border-box;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+#fileStatus-reportPhotos { margin: 0; }
+</style>
 </head>
 
 
