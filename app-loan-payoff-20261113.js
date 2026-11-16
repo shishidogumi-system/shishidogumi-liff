@@ -47,6 +47,7 @@ async function refreshDailyBreakdown_(){
   add('給与額（累計・手当含む）',b.salaryTotals.total);add('支払い済み給与額',b.salaryTotals.paid);if(!fullyAllocated)add('未払い給与額',b.wageRemaining);
   const note=document.createElement('p');note.className='note';note.textContent='給与額は現在までに反映された給与の累計です。以下の手当は内訳で、未承認分は含みません。';body.append(note);add('交通費',b.dailyTransportRemaining??b.transportRemaining);if(b.expenseRemaining)add('経費・立替金',b.dailyExpenseRemaining??b.expenseRemaining);
   for(const [key,label] of [['driver','運転手当'],['qualification','資格者現場配置手当'],['other','その他手当'],['training','研修手当']])if(a[key])add(label,a[key],key==='training'?'#1565c0':null);
+  for(const item of b.monthlyAllowances||[]){const row=document.createElement('p');row.className='note';row.style.color='#56697b';row.textContent=item.name+' 月末締め支給予定額 '+dailyMoney_(item.amount);body.append(row);}
   const insurance=insuranceDisplay_(b);add('社会保険料',insurance.fixed);add('充当済み',insurance.applied);add('充当残額',-insurance.totalUnfunded,insurance.totalUnfunded?'#c00000':null);
   if(b.training){add('研修手当の総額',b.training.total,'#1565c0');add('研修手当の加算済み',b.training.allocated,'#1565c0');add('研修手当の残り',b.training.remaining,'#1565c0');}
   const r=b.reserve;if(r.loanTotal||r.loanRemaining||r.currentLoanPending){add('貸付総額',r.loanTotal||0);add('貸付の未返済残額',r.loanRemaining);add('今回の返済分',-r.currentLoanPending);}
