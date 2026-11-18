@@ -184,7 +184,7 @@ function requestFor_(kind,signature) {
 }
 function clearRequest_(kind){const key='shishidogumi-request:'+currentUser.userId+':'+kind;(requestFor_.memory_||(requestFor_.memory_=Object.create(null)))[key]=null;try{sessionStorage.removeItem(key);}catch(e){}}
 function transportInput_(){const from=byId('transportFrom'),to=byId('transportTo');return from&&to?(from.value.trim()&&to.value.trim()?from.value.trim()+'|'+to.value.trim():''):byId('route').value.trim();}
-function syncTransportStations_(){byId('route').value=transportInput_();invalidateTransport();}
+function syncTransportStations_(input){byId('route').value=transportInput_();invalidateTransport();if(input)stationPickerChanged_(input.id==='transportFrom'?'from':'to');}
 function selectTransportTrip() {
   if(!transportResult)return;
   transportResult.tripType=byId('transportTripType').value;
@@ -192,10 +192,12 @@ function selectTransportTrip() {
   byId('resultAmount').textContent='会社支給額'+Number(transportResult.amount).toLocaleString('ja-JP')+'円';byId('resultAmount').style.color=transportResult.amount===0?'#c00000':'';byId('resultRoute').textContent=transportResult.route+(transportResult.journey?'\n'+transportResult.journey:'')+(Number.isFinite(transportResult.transferCount)?'\n乗り換え '+transportResult.transferCount+'回':'')+'\n'+transportResult.tripType+'運賃'+transportResult.actual.toLocaleString('ja-JP')+'円';byId('resultRoute').style.whiteSpace='pre-line';
   transportRequestId=null;
 }
-function showStationChoices_(choices){
- let box=byId('stationChoices');if(!box){box=document.createElement('div');box.id='stationChoices';box.setAttribute('role','status');box.style.cssText='color:#c00000;white-space:pre-line;margin-top:20px;font-weight:700';byId('transportForm').appendChild(box);}
- box.textContent=(choices||[]).map(x=>x.position+'：同じ名前の駅があります\n'+x.candidates.map(c=>c.name+(c.prefecture&&!c.name.includes(c.prefecture)?'（'+c.prefecture+'）':'')).join('\n')+(x.selected?'\n今回の計算：'+x.selected:'')+'\n府県名＋駅名で指定できます（例：兵庫県尼崎駅）。').join('\n\n');box.hidden=!(choices||[]).length;
-}
+const stationPickerState_={from:{},to:{}};
+function stationPickerBox_(side){const input=byId(side==='from'?'transportFrom':'transportTo');let box=byId('station-options-'+side);if(!box){box=document.createElement('div');box.id='station-options-'+side;box.hidden=true;box.style.cssText='border:1px solid #9db6ca;border-radius:8px;max-height:280px;overflow:auto;background:white;margin:4px 0 12px;box-shadow:0 3px 8px #0002';box.setAttribute('role','group');box.setAttribute('aria-label','駅の候補');input.after(box);input.setAttribute('aria-controls',box.id);input.setAttribute('aria-expanded','false');input.addEventListener('keydown',e=>{if(e.key==='Escape'){box.hidden=true;input.setAttribute('aria-expanded','false');}if(e.key==='ArrowDown'&&!box.hidden){e.preventDefault();box.querySelector('button')?.focus();}});}return box;}
+function stationPickerRender_(side,rows,message){const box=stationPickerBox_(side),input=byId(side==='from'?'transportFrom':'transportTo');box.replaceChildren();if(message){const p=document.createElement('p');p.textContent=message;p.style.cssText='padding:10px;margin:0;font-size:15px';box.appendChild(p);}rows.forEach(c=>{const b=document.createElement('button');b.type='button';b.style.cssText='display:block;width:100%;text-align:left;border:0;border-bottom:1px solid #ddd;background:#fff;color:#183d60;padding:12px;font:inherit;cursor:pointer;box-sizing:border-box';const name=document.createElement('strong');name.textContent=c.name;const detail=document.createElement('small');detail.style.cssText='display:block;line-height:1.5;color:#52677a';detail.textContent=[c.prefecture,...(c.companies||[]),...(c.lines||[])].filter(Boolean).join(' ／ ');b.append(name,detail);b.onclick=()=>{stationPickerState_[side].version=(stationPickerState_[side].version||0)+1;stationPickerState_[side].selected=c;clearTimeout(stationPickerState_[side].timer);input.value=c.name;byId('route').value=transportInput_();invalidateTransport();input.focus();};b.onkeydown=e=>{if(e.key==='ArrowDown'){e.preventDefault();b.nextElementSibling?.focus();}if(e.key==='ArrowUp'){e.preventDefault();(b.previousElementSibling||input).focus();}if(e.key==='Escape'){box.hidden=true;input.setAttribute('aria-expanded','false');input.focus();}};box.appendChild(b);});box.hidden=!rows.length&&!message;input.setAttribute('aria-expanded',String(!box.hidden));}
+function stationPickerChanged_(side){const state=stationPickerState_[side],input=byId(side==='from'?'transportFrom':'transportTo');state.selected=null;state.version=(state.version||0)+1;clearTimeout(state.timer);const version=state.version,query=input.value.trim();if(query.length<2)return;state.timer=setTimeout(async()=>{if(input.isComposing||!idToken||!currentUser)return;stationPickerRender_(side,[],'駅の候補を検索しています…');try{const rows=await callServer('transportStationCandidates',{idToken,query});if(state.version!==version||input.value.trim()!==query)return;stationPickerRender_(side,rows,rows.length?'':'候補がありません。駅名を確認してください。');}catch(e){if(state.version===version)stationPickerRender_(side,[],'候補を取得できませんでした。「運賃を計算する」から再確認できます。');}},700);}
+function stationPickerSelection_(){const result={};for(const side of ['from','to']){const c=stationPickerState_[side].selected,input=byId(side==='from'?'transportFrom':'transportTo');if(c&&input.value.trim()===c.name)result[side]=c.code;}return result;}
+function showStationChoices_(choices){for(const side of ['from','to']){const c=(choices||[]).find(x=>x.position===(side==='from'?'出発駅':'到着駅'));stationPickerRender_(side,c?c.candidates:[],c?'利用する駅を選択してください。':'');}}
 function invalidateTransport() {
   transportResult = null;
   transportRequestId = null;
@@ -207,6 +209,7 @@ function invalidateTransport() {
 async function calculateFare() {
   if (pending.calculate || pending.transport) return;
   clearError(); clearMessage(); invalidateTransport();
+  for(const state of Object.values(stationPickerState_)){clearTimeout(state.timer);state.version=(state.version||0)+1;}
   try {
     requireAuthentication();
     const raw = transportInput_();
@@ -215,9 +218,9 @@ async function calculateFare() {
     if (!date) throw new Error('利用日を選択してください。');
     const route = raw.includes('|')?raw:normalizeRoute(raw);
     setBusy('calculate', 'calculateButton', '運賃を計算中…', '運賃を計算する', ['route', 'transportFrom', 'transportTo', 'transportDate', 'transportTripType'], true);
-    const result = await callServer('calculateTransportFare', {idToken: idToken, route: route, date: date});
+    const result = await callServer('calculateTransportFare', {idToken: idToken, route: route, date: date, stationSelection:stationPickerSelection_()});
     showStationChoices_(result&&result.stationChoices||[]);
-    if(result&&result.needsStationSelection){byId('stationChoices').scrollIntoView({behavior:'smooth',block:'nearest'});return;}
+    if(result&&result.needsStationSelection){const side=result.stationChoices[0].position==='出発駅'?'from':'to';stationPickerBox_(side).scrollIntoView({behavior:'smooth',block:'nearest'});return;}
     if (!result || typeof result.routeDisplay !== 'string' || !Number.isFinite(result.oneWayFare) ||
         !Number.isFinite(result.roundTripFare) || result.oneWayFare < 0 || result.roundTripFare < 0) {
       throw new Error('運賃を取得できませんでした。');
