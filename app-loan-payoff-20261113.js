@@ -568,7 +568,7 @@ async function sendStaffName_() {
     // 申請用RPCの登録チェックを通さず、サーバーがLINEトークンを個別に検証します。
     const user = await new Promise(function(resolve, reject) {
       google.script.run.withSuccessHandler(resolve).withFailureHandler(reject)
-        .registerStaffName({idToken: idToken, realName: realName, guardRole: guardRole, page: PAGE});
+        .registerStaffName({idToken: idToken, realName: realName, guardRole: guardRole, page: PAGE, registrationGrant: registrationGrant_});
     });
     if (!user || !user.registered || user.needsNameRegistration) throw new Error('登録結果を確認できませんでした。もう一度登録してください。');
     currentUser = user;
