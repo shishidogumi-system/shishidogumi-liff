@@ -29,18 +29,21 @@ function renderDailyAmounts_(){
  byId('dailyAmount').max=String(b?.available||0);byId('dailyRefresh').disabled=dailyBalanceLoading_||pending.daily;
  byId('dailyFullButton').textContent=pending.daily?'申請中…':blocked?'日給を更新しています…':b?'全額で申請（'+dailyMoney_(b.available)+'）':'全額で申請';
  byId('dailyButton').textContent=pending.daily?'申請中…':'入力した金額で申請';
+ byId('dailyDetailsButton').disabled=pending.daily||provisionalBusy_||dailyBalanceLoading_;
  renderProvisionalPanel_('daily',b?.provisionalWork);
  byId('dailyProcessingCompact').textContent=b?.processing?.message||'';
  if(dailyBreakdownData_&&b&&dailyBreakdownData_.version!==b.version){dailyBreakdownData_=null;dailyBreakdownRequest_++;byId('dailyBreakdownBody').replaceChildren();byId('dailyBreakdownStatus').textContent='残高が変わりました。「内訳を更新」で確認してください。';}
 }
 async function toggleDailyBreakdown_(){
+ if(pending.daily||provisionalBusy_||dailyBalanceLoading_)return;
  const panel=byId('dailyBreakdownPanel');panel.hidden=!panel.hidden;byId('dailyDetailsButton').textContent=panel.hidden?'詳細を確認':'詳細を閉じる';byId('dailyDetailsButton').setAttribute('aria-expanded',String(!panel.hidden));
  if(!panel.hidden)await refreshDailyBreakdown_();else{dailyBreakdownRequest_++;dailyHistorySerial_++;}
 }
 function appendDailyDetailLine_(parent,label,value,color){const row=document.createElement('p'),title=document.createElement('span'),amount=document.createElement('strong');row.style.cssText='display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;border-bottom:1px solid #dce5ee;padding:12px 0';title.textContent=label;amount.textContent=value;if(color)amount.style.color=color;row.append(title,amount);parent.append(row);}
 async function refreshDailyBreakdown_(){
+ if(pending.daily||provisionalBusy_||dailyBalanceLoading_)return;
  const serial=++dailyBreakdownRequest_,status=byId('dailyBreakdownStatus');status.textContent='内訳を読み込んでいます…';
- try{const b=await callServer('employeeDailyBalance',{idToken});if(serial!==dailyBreakdownRequest_||byId('dailyBreakdownPanel').hidden||dailyBalanceLoading_)return;validateDailyBalance_(b);dailySummary_=b;dailyBreakdownData_=b;
+ try{const b=await callServer('employeeDailyBalance',{idToken});if(serial!==dailyBreakdownRequest_||byId('dailyBreakdownPanel').hidden||dailyBalanceLoading_||pending.daily||provisionalBusy_)return;validateDailyBalance_(b);dailySummary_=b;dailyBreakdownData_=b;
   const body=byId('dailyBreakdownBody');body.replaceChildren();const add=(label,value,color)=>appendDailyDetailLine_(body,label,dailyMoney_(value===0?0:value),color),a=b.approvedAllowances||{};
   if(!b.salaryTotals||!Number.isSafeInteger(b.salaryTotals.total)||!Number.isSafeInteger(b.salaryTotals.paid))throw new Error('給与累計を取得できませんでした。');
   const fullyAllocated=b.grossAvailable>0&&b.grossAvailable<=(b.dailyReservedDeduction??b.reserve.deductionTotal);
@@ -392,11 +395,11 @@ function validateDailyBalance_(b){
 async function sendDaily_(mode){
  if(pending.daily||dailyBalanceLoading_||provisionalBusy_)return;clearError();clearMessage();
  try{requireAuthentication();if(!dailySummary_)throw new Error('先に残高を更新してください。');const snapshot=dailySummary_,amount=mode==='full'?snapshot.available:validAmount(byId('dailyAmount').value,'日払い申請金額');if(!Number.isSafeInteger(amount)||amount<=0||amount>snapshot.available)throw new Error('申請金額は1円以上、残高合計以下で入力してください。');
- pending.daily=true;renderDailyAmounts_();const requestId=requestFor_('daily-balance',JSON.stringify([snapshot.version,amount]));
+ pending.daily=true;dailyBreakdownRequest_++;dailyHistorySerial_++;dailyBreakdownData_=null;byId('dailyBreakdownBody').replaceChildren();byId('dailyBreakdownStatus').textContent='申請の受付結果を確認しています…';renderDailyAmounts_();const requestId=requestFor_('daily-balance',JSON.stringify([snapshot.version,amount]));
  const result=await callServer('employeeDailyApply',{idToken:idToken,requestId:requestId,mode:mode,amount:amount,version:snapshot.version});
  if(!result||result.complete!==true||result.amount!==amount)throw new Error('受付結果を確認できませんでした。同じ内容で再送してください。');validateDailyBalance_(result.balance);dailySummary_=result.balance;renderDailyAmounts_();byId('dailyAmount').value='';byId('dailySummaryStatus').textContent='残業代・手当等は、会社承認後に加算されます';showMessage(result.message+(result.balance.processing?'\n'+result.balance.processing.message:''));
  }catch(error){showError(errorText(error,'日払い申請に失敗しました。'));}
- finally{pending.daily=false;renderDailyAmounts_();}
+ finally{pending.daily=false;byId('dailyBreakdownStatus').textContent='「内訳を更新」で最新の内訳を確認できます。';renderDailyAmounts_();}
 }
 async function submitDailyFull(){return sendDaily_('full');}
 
