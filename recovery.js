@@ -53,15 +53,23 @@
    let tx;try{tx=db.transaction('submissions',mode,{durability:'strict'});}catch(e){tx=db.transaction('submissions',mode);}
    let value;const req=fn(tx.objectStore('submissions'));req.onsuccess=()=>value=req.result;tx.oncomplete=()=>resolve(value);tx.onabort=tx.onerror=()=>reject(tx.error||Error('Storage failed'));
   });}
-  return {get:key=>operation('readonly',s=>s.get(key)),put:value=>operation('readwrite',s=>s.put(value)),remove:key=>operation('readwrite',s=>s.delete(key)),list:async uid=>(await operation('readonly',s=>s.getAll())).filter(r=>r.uid===uid)};
+  async function prune(expected){const db=await open();return new Promise((resolve,reject)=>{const tx=db.transaction('submissions','readwrite'),store=tx.objectStore('submissions'),req=store.get(expected.key);req.onsuccess=()=>{const now=req.result;if(now&&now.state===expected.state&&now.updated===expected.updated&&!now.receipt&&['received','rejected'].includes(now.state)&&Date.now()-now.updated>7*86400000)store.delete(expected.key);};tx.oncomplete=resolve;tx.onabort=tx.onerror=()=>reject(tx.error||Error('Storage failed'));});}
+  return {prune,get:key=>operation('readonly',s=>s.get(key)),put:value=>operation('readwrite',s=>s.put(value)),remove:key=>operation('readwrite',s=>s.delete(key)),list:async uid=>(await operation('readonly',s=>s.getAll())).filter(r=>r.uid===uid)};
  }
  const storeForBrowser=browserStore();let config=null,uiBusy=false,journal=createJournal(storeForBrowser);
  function identity(){return config?.userId||root.SHISHIDOGUMI_BOOTSTRAP?.currentUser?.userId||'';}
  function banner(text){if(!root.document?.body)return;let el=root.document.getElementById('submissionSaveStatus');if(!el){el=root.document.createElement('p');el.id='submissionSaveStatus';el.setAttribute('role','status');el.style.cssText='position:sticky;top:0;z-index:10000;background:#fff2c6;color:#4c3600;border:2px solid #d8a400;padding:14px;font-weight:bold;white-space:pre-line';root.document.body.prepend(el);}el.textContent=text;el.hidden=!text;}
+ let rendering=false,renderAgain=false;
  async function render(){
+  if(rendering){renderAgain=true;return;}rendering=true;
+  try{await renderOnce();}finally{rendering=false;if(renderAgain){renderAgain=false;void render();}}
+ }
+ async function renderOnce(){
   if(!config||!root.document?.body)return;let rows;try{rows=await journal.list(identity());}catch(e){return;}
   let el=root.document.getElementById('submissionRecovery');if(!el){el=root.document.createElement('section');el.id='submissionRecovery';el.style.cssText='border:2px solid #d8a400;padding:14px;margin:12px 0;background:#fff9e8;border-radius:8px';root.document.body.prepend(el);}
   el.replaceChildren();const pending=rows.filter(r=>r.state==='pending'),recent=rows.filter(r=>r.state==='received'&&r.receipt&&r.method==='saveDailyReport');el.hidden=!pending.length&&!recent.length;
+  // Keep uncertain submissions and reports awaiting name confirmation indefinitely.
+  for(const r of rows)if(['received','rejected'].includes(r.state)&&!r.receipt&&Date.now()-r.updated>7*86400000)storeForBrowser.prune(r).catch(()=>{});
   if(el.hidden)return;const title=root.document.createElement('strong');title.textContent=pending.length?'受付結果を確認できていない申請があります':'保存済み日報の会社名・現場名の確認';el.append(title);
   for(const r of pending.concat(recent.slice(-1))){
    const line=root.document.createElement('p');line.textContent=labels[r.method]+' ／ '+new Date(r.created).toLocaleString('ja-JP')+(r.payload?.amount?' ／ '+Number(r.payload.amount).toLocaleString('ja-JP')+'円':'');el.append(line);
@@ -73,9 +81,9 @@
    };el.append(button);}
    else{const button=root.document.createElement('button');button.type='button';button.textContent='日報の会社名・現場名を確認する';button.onclick=()=>root.dispatchEvent(new CustomEvent('shishidogumi-recovered',{detail:{method:r.method,result:{receipt:r.receipt}}}));el.append(button);}
   }
-  for(const r of rows)if(['received','rejected'].includes(r.state)&&Date.now()-r.updated>7*86400000)journal.remove(r.key).catch(()=>{});
+
  }
- function notify(state){if(state==='saving')banner('送信中です。まだ保存完了ではありません。\n受付結果が表示されるまでお待ちください。');if(state==='waiting')banner('保存の確認に時間がかかっています。まだ完了していません。\n送信内容は端末に保存済みです。画面を閉じた場合は、開き直して受付結果を確認してください。');if(state==='unconfirmed')banner('受付結果を確認できませんでした。送信内容は端末に保持されています。\n「受付確認・同じ内容で再送」で確認してください。');if(state==='received'||state==='rejected')banner('');render();}
+ function notify(state){if(state==='saving')banner('送信中です。まだ保存完了ではありません。\n受付結果が表示されるまでお待ちください。');if(state==='waiting')banner('保存の確認に時間がかかっています。まだ完了していません。\n送信内容は端末に保存済みです。画面を閉じた場合は、開き直して受付結果を確認してください。');if(state==='unconfirmed')banner('受付結果を確認できませんでした。送信内容は端末に保持されています。\n「受付確認・同じ内容で再送」で確認してください。');if(state==='received'||state==='rejected')banner('');if(state!=='saving'&&state!=='waiting')render();}
  async function run(method,data,send){return journal.execute(identity(),method,data,send||config.send,notify);}
  function attach(value){config=value;render();}
  async function finishReport(receipt){for(const r of await journal.list(identity()))if(r.state==='received'&&r.receipt===receipt){r.receipt='';await storeForBrowser.put(r);}render();}
