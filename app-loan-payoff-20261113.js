@@ -119,7 +119,7 @@ function registrationToken_(){
  if(currentUser?.userId&&decoded.sub!==currentUser.userId)throw Error('LINEの利用者が変わりました。公式LINEから開き直してください。');
  idToken=token;return token;
 }
-function registrationResultValid_(user){return !!(user&&user.registered===true&&user.needsNameRegistration===false&&user.userId===currentUser?.userId&&String(user.name||'').trim()&&['一般警備員','資格保有警備員'].includes(user.guardRole));}
+function registrationResultValid_(user){return !!(user&&user.complete!==false&&user.registered===true&&user.needsNameRegistration===false&&user.userId===currentUser?.userId&&String(user.name||'').trim()&&['一般警備員','資格保有警備員'].includes(user.guardRole));}
 function registrationRetry_(data){
  if(registeringName)return;
  if(data){byId('realName').value=data.realName||'';byId('guardRole').value=data.guardRole||'';}
