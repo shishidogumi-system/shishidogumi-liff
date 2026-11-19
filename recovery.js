@@ -2,23 +2,25 @@
 (function(root){
  'use strict';
  const labels={workClockIn:'上番報告',workClockOut:'下番報告',workProvisionalOut:'仮下番報告',saveTransportation:'交通費申請',employeeDailyApply:'日払い申請',saveExpense:'経費申請',saveDailyReport:'警備日報',saveShiftRequests:'シフト申請',registerStaffName:'氏名登録'};
+ function registrationComplete(result,uid){return !!(uid&&result&&result.userId===uid&&result.registered===true&&result.needsNameRegistration===false&&String(result.name||'').trim()&&['一般警備員','資格保有警備員'].includes(result.guardRole));}
+ function registrationPayload(data){const payload={...data};delete payload.idToken;delete payload.id_token;delete payload.registrationGrant;return payload;}
  function createJournal(store){
   const running=new Map();
   async function execute(uid,method,data,send,notify){
-   if(!labels[method]||!uid)return send(method,data);
-   const payload=JSON.parse(JSON.stringify(data));delete payload.idToken;delete payload.id_token;
+   if(!labels[method]||!uid){const result=await send(method,data);if(method==='registerStaffName'&&!registrationComplete(result,uid))throw Error('登録結果を確認できませんでした。');return result;}
+   const payload=JSON.parse(JSON.stringify(data));delete payload.idToken;delete payload.id_token;if(method==='registerStaffName')delete payload.registrationGrant;
    const id=String(data.requestId||data.workId||'registration'),key=JSON.stringify([uid,method,id]);
    if(running.has(key))return running.get(key);
    const job=(async()=>{
     let previous;try{previous=await store.get(key);}catch(e){throw Error('送信内容を端末に保存できませんでした。ブラウザの保存設定を確認してください。申請はまだ送信していません。');}
-    if(previous&&previous.state==='pending'&&JSON.stringify(previous.payload)!==JSON.stringify(payload))throw Error('同じ勤務の確認待ちの報告があります。先に「受付確認・同じ内容で再送」で確認してください。');
+    if(previous&&previous.state==='pending'&&(method==='registerStaffName'?previous.payload.realName!==payload.realName||previous.payload.guardRole!==payload.guardRole:JSON.stringify(previous.payload)!==JSON.stringify(payload)))throw Error(method==='registerStaffName'?'確認待ちの氏名登録があります。「氏名登録を確認・再開」から元の内容を確認してください。':'同じ勤務の確認待ちの報告があります。先に「受付確認・同じ内容で再送」で確認してください。');
     const record={key,uid,method,payload,state:'pending',created:previous?.created||Date.now(),updated:Date.now()};
     try{await store.put(record);}catch(e){throw Error('送信内容を端末に保存できませんでした。空き容量やブラウザ設定を確認してください。申請はまだ送信していません。');}
     notify?.('saving',record);
     const timer=typeof root.setTimeout==='function'?root.setTimeout(()=>notify?.('waiting',record),8000):null;
     try{
      const result=await send(method,data);
-     if(result===undefined||result===null||result.complete===false)throw Error('保存結果を確認できませんでした。同じ内容で受付を確認してください。');
+     if(result===undefined||result===null||result.complete===false||method==='registerStaffName'&&!registrationComplete(result,uid))throw Error('保存結果を確認できませんでした。同じ内容で受付を確認してください。');
      const receipt={...record,state:'received',message:typeof result==='string'?result:String(result.message||'受付結果を受信しました。'),receipt:result.namesConfirmed===true?'':result.receipt||'',updated:Date.now()};delete receipt.payload;
      // A failed local acknowledgement must not turn a server success into a failed application.
      try{await store.put(receipt);}catch(e){notify?.('ack-storage-failed',record);}
@@ -52,8 +54,8 @@
   if(el.hidden)return;const title=root.document.createElement('strong');title.textContent=pending.length?'受付結果を確認できていない申請があります':'保存済み日報の会社名・現場名の確認';el.append(title);
   for(const r of pending.concat(recent.slice(-1))){
    const line=root.document.createElement('p');line.textContent=labels[r.method]+' ／ '+new Date(r.created).toLocaleString('ja-JP')+(r.payload?.amount?' ／ '+Number(r.payload.amount).toLocaleString('ja-JP')+'円':'');el.append(line);
-   if(r.state==='pending'){const button=root.document.createElement('button');button.type='button';button.textContent='受付確認・同じ内容で再送';button.disabled=uiBusy||journal.running.has(r.key);button.onclick=async()=>{
-    if(uiBusy||journal.running.size||typeof root.applicationSaving_==='function'&&root.applicationSaving_())return;uiBusy=true;button.disabled=true;
+   if(r.state==='pending'){const button=root.document.createElement('button');button.type='button';button.textContent=r.method==='registerStaffName'?'氏名登録を確認・再開':'受付確認・同じ内容で再送';button.disabled=uiBusy||journal.running.has(r.key);button.onclick=async()=>{
+    if(uiBusy||journal.running.size||typeof root.applicationSaving_==='function'&&root.applicationSaving_())return;if(r.method==='registerStaffName'){root.dispatchEvent(new CustomEvent('shishidogumi-registration-retry',{detail:registrationPayload(r.payload||{})}));return;}uiBusy=true;button.disabled=true;
     try{const token=config.token();if(!token)throw Error('LINEから開き直してください。');const result=await run(r.method,{...r.payload,idToken:token});root.dispatchEvent(new CustomEvent('shishidogumi-recovered',{detail:{method:r.method,result}}));banner(typeof result==='string'?result:result.message||'受付結果を確認しました。');}
     catch(e){banner(e.message||'受付結果を確認できませんでした。内容は端末に保持されています。');}
     finally{uiBusy=false;render();}

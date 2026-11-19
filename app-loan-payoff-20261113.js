@@ -92,7 +92,7 @@ let provisionalBusy_=false,provisionalRefreshAt_=0;
 // GAS の iframe 内で LIFF の再初期化や別ユーザーの取得は行いません。
 const BOOTSTRAP = window.SHISHIDOGUMI_BOOTSTRAP;
 let PAGE = BOOTSTRAP.page;
-const idToken = BOOTSTRAP.idToken;
+let idToken = BOOTSTRAP.idToken;
 let currentUser = BOOTSTRAP.currentUser;
 const titles = {work:'勤務報告',transport: '交通費申請', daily: '日払い申請', report: '日報報告', expense: '経費申請', shift: 'シフト申請'};
 const forms = {work:'workForm',transport: 'transportForm', daily: 'dailyForm', report: 'reportForm', expense: 'expenseForm', shift: 'shiftForm'};
@@ -108,6 +108,23 @@ let receiptPreviewUrl = null;
 
 function byId(id) { return document.getElementById(id); }
 let registrationGrant_='';
+function registrationToken_(){
+ const sdk=typeof window!=='undefined'&&window.liff;
+ if(!sdk)return idToken;
+ const token=sdk.getIDToken(),decoded=sdk.getDecodedIDToken();
+ if(!token||!decoded||!decoded.exp||decoded.exp*1000<=Date.now())throw Error('LINE認証の期限が切れました。入力内容を控えて、公式LINEから開き直してください。');
+ if(currentUser?.userId&&decoded.sub!==currentUser.userId)throw Error('LINEの利用者が変わりました。公式LINEから開き直してください。');
+ idToken=token;return token;
+}
+function registrationResultValid_(user){return !!(user&&user.registered===true&&user.needsNameRegistration===false&&user.userId===currentUser?.userId&&String(user.name||'').trim()&&['一般警備員','資格保有警備員'].includes(user.guardRole));}
+function registrationRetry_(data){
+ if(registeringName)return;
+ if(data){byId('realName').value=data.realName||'';byId('guardRole').value=data.guardRole||'';}
+ if(!needsStaffRegistration())return sendStaffName_(true);
+ registrationGrant_='';showRegistrationPin_();
+}
+window.addEventListener('shishidogumi-registration-retry',event=>registrationRetry_(event.detail));
+
 function showRegistrationPin_(){
  document.querySelector('nav[aria-label="申請メニュー"]')?.style.setProperty('display','none');
  byId('nameRegistration').classList.add('hidden');byId('pageTitle').textContent='初回登録';byId('userInfo').textContent='会社から案内された暗証番号を入力してください。';
@@ -118,8 +135,8 @@ function showRegistrationPin_(){
  const button=document.createElement('button');button.type='submit';button.className='button';button.textContent='確認して登録へ進む';
  const status=document.createElement('p');status.setAttribute('role','status');panel.append(label,input,button,status);byId('nameRegistration').before(panel);
  panel.onsubmit=async event=>{event.preventDefault();if(button.disabled)return;button.disabled=true;status.textContent='確認しています…';const pin=input.value;input.value='';try{
-  const r=await new Promise((ok,no)=>google.script.run.withSuccessHandler(ok).withFailureHandler(no).verifyRegistrationPin({idToken,pin}));
-  if(r.registered){location.reload();return;}if(!r.grant)throw Error('暗証番号を確認してください。');registrationGrant_=r.grant;panel.hidden=true;byId('nameRegistration').classList.remove('hidden');byId('pageTitle').textContent='初回氏名登録';byId('userInfo').textContent='氏名と警備員区分を登録してください。';status.textContent='';
+  const r=await new Promise((ok,no)=>google.script.run.withSuccessHandler(ok).withFailureHandler(no).verifyRegistrationPin({idToken:registrationToken_(),pin}));
+  if(r.registered){if(!byId('realName').value.trim()){location.reload();return;}await sendStaffName_(true);return;}if(!r.grant)throw Error('暗証番号を確認してください。');registrationGrant_=r.grant;panel.hidden=true;byId('nameRegistration').classList.remove('hidden');byId('pageTitle').textContent='初回氏名登録';byId('userInfo').textContent='氏名と警備員区分を登録してください。';status.textContent='';
  }catch(e){status.textContent=errorText(e,'暗証番号を確認できませんでした。');}finally{button.disabled=false;}};
 }
 
@@ -552,11 +569,12 @@ function showRegisteredApplication() {
   if(PAGE==='daily')refreshDailyAmounts_();if(PAGE==='shift')refreshShiftState_(true);if(PAGE==='report')loadReportOptions_();
   ['reportButton', 'expenseButton', 'calculateButton','shiftButton'].forEach(function(id) { byId(id).disabled = false; });
 }
-async function sendStaffName_() {
+async function sendStaffName_(recoverExisting) {
   if (registeringName) return;
   clearError(); clearMessage();
   try {
-    if (!idToken || !currentUser || !needsStaffRegistration()) throw new Error('LINEから画面を開き直してください。');
+    const registrationToken=registrationToken_();
+    if (!registrationToken || !currentUser || (!needsStaffRegistration()&&!recoverExisting)) throw new Error('LINEから画面を開き直してください。');
     const realName = byId('realName').value.trim();
     const guardRole = byId('guardRole').value;
     if (['一般警備員','資格保有警備員'].indexOf(guardRole) < 0) throw new Error('警備員区分を選択してください。');
@@ -568,15 +586,22 @@ async function sendStaffName_() {
     // 申請用RPCの登録チェックを通さず、サーバーがLINEトークンを個別に検証します。
     const user = await new Promise(function(resolve, reject) {
       google.script.run.withSuccessHandler(resolve).withFailureHandler(reject)
-        .registerStaffName({idToken: idToken, realName: realName, guardRole: guardRole, page: PAGE, registrationGrant: registrationGrant_});
+        .registerStaffName({idToken: registrationToken, realName: realName, guardRole: guardRole, page: PAGE, registrationGrant: registrationGrant_});
     });
-    if (!user || !user.registered || user.needsNameRegistration) throw new Error('登録結果を確認できませんでした。もう一度登録してください。');
+    if (!registrationResultValid_(user)) throw new Error('登録結果を確認できませんでした。もう一度登録してください。');
+    const registrationDiff=user.name!==realName||user.guardRole!==guardRole;
     currentUser = user;
     for(const key of ['initialWorkState','initialDailyBalance','initialShiftState'])if(user[key])BOOTSTRAP[key]=user[key];
     byId('realName').value = '';
+    if(byId('registrationPinPanel'))byId('registrationPinPanel').hidden=true;
     showRegisteredApplication();
+    showMessage((registrationDiff?'すでに登録済みの内容を確認しました。今回の入力で変更はしていません。変更は会社へご連絡ください。\n':'登録を確認しました。\n')+'氏名：'+user.name+' ／ '+user.guardRole);
     if(PAGE==='work')refreshWorkReport_();
-  } catch (error) { showError(errorText(error, '氏名の登録に失敗しました。もう一度登録してください。')); }
+  } catch (error) {
+    const message=errorText(error,'氏名の登録に失敗しました。もう一度登録してください。');
+    if(/暗証番号をもう一度入力|最初に会社の暗証番号/.test(message)){registrationGrant_='';showRegistrationPin_();}
+    showError(message);
+  }
   finally {
     registeringName = false;
     byId('registerNameButton').disabled = false;
