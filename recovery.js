@@ -5,28 +5,39 @@
  function registrationComplete(result,uid){return !!(uid&&result&&result.userId===uid&&result.registered===true&&result.needsNameRegistration===false&&String(result.name||'').trim()&&['一般警備員','資格保有警備員'].includes(result.guardRole));}
  function registrationPayload(data){const payload={...data};delete payload.idToken;delete payload.id_token;delete payload.registrationGrant;return payload;}
  function createJournal(store){
-  const running=new Map();
+  const running=new Map(),dailyRunning=new Map();
   async function execute(uid,method,data,send,notify){
    if(!labels[method]||!uid){const result=await send(method,data);if(method==='registerStaffName'&&!registrationComplete(result,uid))throw Error('登録結果を確認できませんでした。');return result;}
    const payload=JSON.parse(JSON.stringify(data));delete payload.idToken;delete payload.id_token;if(method==='registerStaffName')delete payload.registrationGrant;
    const id=String(data.requestId||data.workId||'registration'),key=JSON.stringify([uid,method,id]);
    if(running.has(key))return running.get(key);
+   if(method==='employeeDailyApply'&&dailyRunning.has(uid))throw Error('日払い申請の受付確認中です。完了してから追加申請してください。');
    const job=(async()=>{
     let previous;try{previous=await store.get(key);}catch(e){throw Error('送信内容を端末に保存できませんでした。ブラウザの保存設定を確認してください。申請はまだ送信していません。');}
+    if(method==='employeeDailyApply'){
+     let records;try{records=await store.list(uid);}catch(e){throw Error('日払いの受付状況を端末で確認できませんでした。申請はまだ送信していません。');}
+     if(previous?.state!=='pending'&&records.some(r=>r.uid===uid&&r.method===method&&r.state==='pending'&&r.key!==key))throw Error('受付結果が未確認の日払い申請があります。先に「受付確認・同じ内容で再送」で確認してから追加申請してください。');
+    }
     if(previous&&previous.state==='pending'&&(method==='registerStaffName'?previous.payload.realName!==payload.realName||previous.payload.guardRole!==payload.guardRole:JSON.stringify(previous.payload)!==JSON.stringify(payload)))throw Error(method==='registerStaffName'?'確認待ちの氏名登録があります。「氏名登録を確認・再開」から元の内容を確認してください。':'同じ勤務の確認待ちの報告があります。先に「受付確認・同じ内容で再送」で確認してください。');
     const record={key,uid,method,payload,state:'pending',created:previous?.created||Date.now(),updated:Date.now()};
     try{await store.put(record);}catch(e){throw Error('送信内容を端末に保存できませんでした。空き容量やブラウザ設定を確認してください。申請はまだ送信していません。');}
     notify?.('saving',record);
     const timer=typeof root.setTimeout==='function'?root.setTimeout(()=>notify?.('waiting',record),8000):null;
+    let confirmedRejected=false;
     try{
      const result=await send(method,data);
+     if(method==='employeeDailyApply'&&result?.complete===false&&result.notSaved===true&&result.requestId===data.requestId&&result.amount===data.amount&&typeof result.message==='string'){
+      const rejected={...record,state:'rejected',message:result.message,updated:Date.now()};delete rejected.payload;
+      try{await store.put(rejected);confirmedRejected=true;}catch(e){}
+      throw Error(result.message);
+     }
      if(result===undefined||result===null||result.complete===false||method==='registerStaffName'&&!registrationComplete(result,uid))throw Error('保存結果を確認できませんでした。同じ内容で受付を確認してください。');
      const receipt={...record,state:'received',message:typeof result==='string'?result:String(result.message||'受付結果を受信しました。'),receipt:result.namesConfirmed===true?'':result.receipt||'',updated:Date.now()};delete receipt.payload;
      // A failed local acknowledgement must not turn a server success into a failed application.
      try{await store.put(receipt);}catch(e){notify?.('ack-storage-failed',record);}
      notify?.('received',receipt);return result;
-    }catch(e){notify?.('unconfirmed',record);throw e;}finally{if(timer!==null)root.clearTimeout(timer);}
-   })();running.set(key,job);try{return await job;}finally{running.delete(key);}
+    }catch(e){notify?.(confirmedRejected?'rejected':'unconfirmed',record);throw e;}finally{if(timer!==null)root.clearTimeout(timer);}
+   })();running.set(key,job);if(method==='employeeDailyApply')dailyRunning.set(uid,key);try{return await job;}finally{running.delete(key);if(dailyRunning.get(uid)===key)dailyRunning.delete(uid);}
   }
   return {execute,running,list:uid=>store.list(uid),remove:key=>store.remove(key)};
  }
@@ -62,9 +73,9 @@
    };el.append(button);}
    else{const button=root.document.createElement('button');button.type='button';button.textContent='日報の会社名・現場名を確認する';button.onclick=()=>root.dispatchEvent(new CustomEvent('shishidogumi-recovered',{detail:{method:r.method,result:{receipt:r.receipt}}}));el.append(button);}
   }
-  for(const r of rows)if(r.state==='received'&&Date.now()-r.updated>7*86400000)journal.remove(r.key).catch(()=>{});
+  for(const r of rows)if(['received','rejected'].includes(r.state)&&Date.now()-r.updated>7*86400000)journal.remove(r.key).catch(()=>{});
  }
- function notify(state){if(state==='saving')banner('送信中です。まだ保存完了ではありません。\n受付結果が表示されるまでお待ちください。');if(state==='waiting')banner('保存の確認に時間がかかっています。まだ完了していません。\n送信内容は端末に保存済みです。画面を閉じた場合は、開き直して受付結果を確認してください。');if(state==='unconfirmed')banner('受付結果を確認できませんでした。送信内容は端末に保持されています。\n「受付確認・同じ内容で再送」で確認してください。');if(state==='received')banner('');render();}
+ function notify(state){if(state==='saving')banner('送信中です。まだ保存完了ではありません。\n受付結果が表示されるまでお待ちください。');if(state==='waiting')banner('保存の確認に時間がかかっています。まだ完了していません。\n送信内容は端末に保存済みです。画面を閉じた場合は、開き直して受付結果を確認してください。');if(state==='unconfirmed')banner('受付結果を確認できませんでした。送信内容は端末に保持されています。\n「受付確認・同じ内容で再送」で確認してください。');if(state==='received'||state==='rejected')banner('');render();}
  async function run(method,data,send){return journal.execute(identity(),method,data,send||config.send,notify);}
  function attach(value){config=value;render();}
  async function finishReport(receipt){for(const r of await journal.list(identity()))if(r.state==='received'&&r.receipt===receipt){r.receipt='';await storeForBrowser.put(r);}render();}

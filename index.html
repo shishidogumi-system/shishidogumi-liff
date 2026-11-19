@@ -13,7 +13,7 @@
 <meta name="referrer" content="no-referrer">
 <link rel="preconnect" href="https://script.google.com">
 <link rel="preconnect" href="https://script.googleusercontent.com">
-<link rel="preload" href="./app-loan-payoff-20261113.js?v=daily-race-20261119" as="script">
+<link rel="preload" href="./app-loan-payoff-20261113.js?v=daily-retry-site-20261119" as="script">
 <script defer src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
   <!-- LINE認証はGitHubの入口とGAS doPostで完了。GAS内では再初期化しません。 -->
@@ -407,7 +407,7 @@
   <div id="workClockInPanel">
     <label for="workShift">勤務区分</label>
     <input id="workShift" type="hidden" value=""><div id="workShiftChoices" class="work-shift-choices" role="group" aria-label="勤務区分を選択"><button type="button" data-shift="日勤" aria-pressed="false" disabled>日勤</button><button type="button" data-shift="夜勤" aria-pressed="false" disabled>夜勤</button></div><p id="workShiftSelected" aria-live="polite">日勤・夜勤を選んでください</p>
-    <label for="workSite">現場名（任意）</label><input id="workSite" maxlength="150" autocomplete="off">
+    <label for="workSite">現場名</label><input id="workSite" maxlength="150" autocomplete="off" required aria-required="true">
     <button type="button" class="button" id="workClockInButton" disabled>上番を報告する</button>
   </div>
   <div id="workClockOutPanel" hidden>
@@ -508,8 +508,8 @@ document.getElementById('startupStatus').textContent='本人確認・最新情�
 window.SHISHIDOGUMI_STARTUP_SHELL={shownAt:performance.now(),release(){form.inert=false;form.removeAttribute('aria-busy');document.getElementById('userInfo').style.display='';},fail(){form.inert=true;form.setAttribute('aria-busy','false');}};
 })();
 </script>
-<script src="./recovery.js?v=daily-race-20261119" defer></script>
-<script src="./entry-loan-payoff-20261113.js?v=daily-race-20261119" defer></script>
+<script src="./recovery.js?v=daily-retry-site-20261119" defer></script>
+<script src="./entry-loan-payoff-20261113.js?v=daily-retry-site-20261119" defer></script>
 
 </body>
 
