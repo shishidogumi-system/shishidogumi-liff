@@ -31,7 +31,7 @@
       try{await store.put(rejected);confirmedRejected=true;}catch(e){}
       throw Error(result.message);
      }
-     if(result===undefined||result===null||result.complete===false||method==='registerStaffName'&&!registrationComplete(result,uid))throw Error('保存結果を確認できませんでした。同じ内容で受付を確認してください。');
+     if(result===undefined||result===null||result.complete===false||method==='employeeDailyApply'&&(result.complete!==true||!Number.isSafeInteger(result.amount)||result.amount<=0||result.amount!==data.amount)||method==='registerStaffName'&&!registrationComplete(result,uid))throw Error('保存結果を確認できませんでした。同じ内容で受付を確認してください。');
      const receipt={...record,state:'received',message:typeof result==='string'?result:String(result.message||'受付結果を受信しました。'),receipt:result.namesConfirmed===true?'':result.receipt||'',updated:Date.now()};delete receipt.payload;
      // A failed local acknowledgement must not turn a server success into a failed application.
      try{await store.put(receipt);}catch(e){notify?.('ack-storage-failed',record);}
