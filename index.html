@@ -13,7 +13,7 @@
 <meta name="referrer" content="no-referrer">
 <link rel="preconnect" href="https://script.google.com">
 <link rel="preconnect" href="https://script.googleusercontent.com">
-<link rel="preload" href="./app-loan-payoff-20261113.js?v=loading-status-20261119" as="script">
+<link rel="preload" href="./app-loan-payoff-20261113.js?v=database-loading-20261120" as="script">
 <script defer src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
   <!-- LINE認証はGitHubの入口とGAS doPostで完了。GAS内では再初期化しません。 -->
@@ -41,14 +41,14 @@
 }
 #fileStatus-reportPhotos { margin: 0; }
 </style>
-<style id="employeeLoadingStatus">#loading,#startupStatus{color:#b40000!important;font-size:clamp(20px,5vw,26px)!important;font-weight:700!important;line-height:1.6;padding:14px 16px;box-sizing:border-box;background:#fff4f4;border-left:5px solid #b40000;overflow-wrap:anywhere}#loading{position:sticky;top:8px;z-index:50}</style>
+<style id="employeeLoadingStatus">#loading,#startupStatus{color:#b40000!important;font-size:clamp(20px,5vw,26px)!important;font-weight:700!important;line-height:1.6;padding:14px 16px;box-sizing:border-box;background:#fff4f4;border-left:5px solid #b40000;overflow-wrap:anywhere}#loading{position:sticky;top:8px;z-index:50}#loading::before{content:"";display:inline-block;width:18px;height:18px;margin-right:10px;vertical-align:-3px;border:3px solid #e9bcbc;border-top-color:#b40000;border-radius:50%;animation:employeeLoadingSpin 0.9s linear infinite}@keyframes employeeLoadingSpin{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){#loading::before{animation:none}}</style>
 </head>
 
 
 <body>
 
 <div class="container">
-<p id="startupStatus" class="user-info" role="status">社内データーと照合中・・・</p>
+<p id="startupStatus" class="user-info" role="status">データベース照会中・・・</p>
 
 
   <div
@@ -67,7 +67,7 @@
   <div
     class="loading"
     id="loading" role="status" aria-live="polite">
-    社内データーと照合中・・・
+    データベース照会中・・・
   </div>
 
 
@@ -505,12 +505,12 @@ form.inert=true;form.setAttribute('aria-busy','true');form.classList.remove('hid
 document.getElementById('pageTitle').textContent=names[page];
 document.getElementById('loading').style.display='none';
 document.getElementById('userInfo').style.display='none';
-document.getElementById('startupStatus').textContent='社内データーと照合中・・・';
+document.getElementById('startupStatus').textContent='データベース照会中・・・';
 window.SHISHIDOGUMI_STARTUP_SHELL={shownAt:performance.now(),release(){form.inert=false;form.removeAttribute('aria-busy');document.getElementById('userInfo').style.display='';},fail(){form.inert=true;form.setAttribute('aria-busy','false');}};
 })();
 </script>
 <script src="./recovery.js?v=daily-receipt-20261120" defer></script>
-<script src="./entry-loan-payoff-20261113.js?v=loading-status-20261119" defer></script>
+<script src="./entry-loan-payoff-20261113.js?v=database-loading-20261120" defer></script>
 
 </body>
 
