@@ -170,7 +170,7 @@ function requireAuthentication() {
 function needsStaffRegistration() { return !!currentUser && (!currentUser.registered || !currentUser.name || currentUser.needsNameRegistration || ['一般警備員','資格保有警備員'].indexOf(currentUser.guardRole) < 0); }
 function errorText(error, fallback) { return error && error.message || fallback; }
 var employeeLoadingCount_=0;
-function employeeLoadingStatus_(delta){employeeLoadingCount_=Math.max(0,employeeLoadingCount_+delta);const el=byId('loading');if(!el)return;el.textContent='社内データーと照合中・・・';el.style.display=employeeLoadingCount_?'block':'none';}
+function employeeLoadingStatus_(delta){employeeLoadingCount_=Math.max(0,employeeLoadingCount_+delta);const el=byId('loading');if(!el)return;el.textContent='データベース照会中・・・';el.style.display=employeeLoadingCount_?'block':'none';}
 function originalCallServer_(method, data) {
   requireAuthentication();
   if(BOOTSTRAP.ownerShiftPreview){const routes={employeeShiftState:'employeeOwnerShiftState',saveShiftRequests:'employeeOwnerShiftApply'};if(!routes[method])return Promise.reject(new Error('検証画面ではシフトだけを確認できます。'));method=routes[method];}
